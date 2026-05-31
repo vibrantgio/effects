@@ -159,7 +159,7 @@ func SpringButton(
 
 				if click.Clicked(gtx) {
 					if props.OnClick != nil {
-						props.OnClick()
+						props.OnClick(gtx)
 					}
 					if props.Message != nil {
 						mvu.MessageOp{Message: props.Message}.Add(gtx.Ops)
