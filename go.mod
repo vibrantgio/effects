@@ -6,9 +6,7 @@ require (
 	gioui.org v0.9.0
 	github.com/reactivego/rx v0.2.2
 	github.com/vibrantgio/mvu v0.0.0
-	github.com/vibrantgio/prism/button v0.0.0
-	github.com/vibrantgio/prism/theme v0.0.0
-	github.com/vibrantgio/prism/tokens v0.0.0
+	github.com/vibrantgio/prism v0.0.0
 	github.com/vibrantgio/traer v0.0.4
 )
 
@@ -24,15 +22,7 @@ require (
 
 replace (
 	github.com/vibrantgio/mvu => ../mvu
-	// bench + internal/golden are prism/button's test-only deps. pulse imports
-	// button as a package but never them, so they only enter the pruned module
-	// graph via button and just need to be readable by 'go mod tidy' — kept as
-	// replaces, intentionally not in require.
-	github.com/vibrantgio/prism/bench => ../prism/bench
-	github.com/vibrantgio/prism/button => ../prism/button
-	github.com/vibrantgio/prism/internal/golden => ../prism/internal/golden
-	github.com/vibrantgio/prism/theme => ../prism/theme
-	github.com/vibrantgio/prism/tokens => ../prism/tokens
+	github.com/vibrantgio/prism => ../prism
 	// Local traer is ahead of published v0.0.4 (adds NewParticleSystem, used by
 	// spring); replace to the sibling repo so standalone (GOWORK=off) builds —
 	// the workspace already resolved this via its ./traer use directive.
