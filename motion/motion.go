@@ -1,11 +1,12 @@
 // Package motion provides enter/exit/transition primitives for animating
 // widgets into, out of, and between visual states.
 //
-// Each primitive composes [pulse/tween] (deterministic, frame-indexed
-// opacity) and [pulse/spring] (physics-driven scale): opacity provides
-// predictable timing, spring provides physical character. The two run on
-// independent timescales — opacity finishes at frame Frames, scale settles
-// when the spring's restoring force balances out.
+// Each primitive composes [github.com/vibrantgio/pulse/tween]
+// (deterministic, frame-indexed opacity) and
+// [github.com/vibrantgio/pulse/spring] (physics-driven scale): opacity
+// provides predictable timing, spring provides physical character. The
+// two run on independent timescales — opacity finishes at frame Frames,
+// scale settles when the spring's restoring force balances out.
 //
 // # Composition with widgets
 //
@@ -23,15 +24,37 @@
 //
 // # Variant pattern
 //
-// Per DESIGN §"Phase 3 — Pulse" composition mechanism, Pulse exposes
-// motion-aware *variants* of Prism components by wrapping their render
-// output with [Apply]. A motion-animated button is just:
+// Pulse never decorates prism globally. A motion-aware component is an
+// explicit variant, exported alongside its prism counterpart and chosen
+// by name at the call site, so that reading the call tells you the
+// component animates and the dependency runs pulse → prism and never
+// back. [Apply] is the mechanism: wrap a prism render function with it.
 //
 //	bw := button.Render(shaper, label, colors, sp, rad, ts, btnState)
 //	motion.Apply(gtx, primitive.State(), bw)
 //
-// Exporting wrapper functions per Prism component is G3.6's job; this
-// package ships only the primitives.
+// This package ships only the primitives. The one variant that exists
+// today is [github.com/vibrantgio/pulse/springbutton], and it is built
+// on spring directly rather than on Apply.
+//
+// # The defaults do not line up
+//
+// [DefaultFrames] and [DefaultSpring] were meant to finish together and
+// do not. Measured with invDt=60: [NewEnter] on a zero [Options] has an
+// opacity tween complete at frame 30, and its scale spring does not
+// reach Settled(0.005) until frame 52 — scale is still 0.991 when the
+// fade ends. A caller looping until [Enter.Settled] therefore runs 22
+// frames past the visible end of the animation, and a caller that stops
+// at Frames leaves the widget fractionally undersized.
+//
+// [Options.Spring] has a sharper edge. It falls back to [DefaultSpring]
+// only when the whole struct is zero. Set one field — Spring:
+// spring.Options{Stiffness: 200} — and the other two do not come from
+// [DefaultSpring] at all; they come from
+// [github.com/vibrantgio/pulse/spring]'s own per-field defaults, which
+// are a much softer spring. The result is a damping ratio near 0.02
+// that rings for thousands of frames. Override all three fields or
+// none.
 package motion
 
 import (
@@ -78,18 +101,20 @@ const (
 	DefaultFromScale = 0.85
 
 	// defaultSpringStiffness and defaultSpringMass parameterise the
-	// motion-package default spring. Pairing critical damping
-	// (c = 2·√(k·m)) with k=80, m=1 settles the spring in ~30 frames at
-	// invDt=60 — coordinated with [DefaultFrames] so opacity and scale
-	// finish together under default options.
+	// motion-package default spring: critical damping (c = 2·√(k·m))
+	// with k=80, m=1. These were chosen to settle in ~30 frames at
+	// invDt=60, matching [DefaultFrames]; measured, the spring reaches
+	// Settled(0.005) at frame 52, so scale outlasts opacity under
+	// default options.
 	defaultSpringStiffness = 80.0
 	defaultSpringMass      = 1.0
 )
 
 // DefaultSpring is the [spring.Options] used when [Options.Spring] is
-// zero-valued. Critically damped at k=80, m=1 — a brisk, no-overshoot
-// curve that settles in ~30 frames at invDt=60 (matching
-// [DefaultFrames]).
+// zero-valued — and only when it is entirely zero-valued. Critically
+// damped at k=80, m=1: a brisk, no-overshoot curve that reaches
+// Settled(0.005) at frame 52 with invDt=60, which is 22 frames past
+// [DefaultFrames] rather than level with it.
 var DefaultSpring = spring.Options{
 	Stiffness: defaultSpringStiffness,
 	Damping:   2 * math.Sqrt(defaultSpringStiffness*defaultSpringMass),
@@ -105,10 +130,12 @@ type Options struct {
 	// physical timescale.
 	Frames int
 
-	// Spring is the [spring.Options] for the scale animation. The zero
-	// value (all fields zero) is replaced with [DefaultSpring]; pass any
-	// non-zero field to override individually via [spring.New]'s own
-	// per-field defaulting.
+	// Spring is the [spring.Options] for the scale animation. Only the
+	// wholly zero value is replaced with [DefaultSpring]. Setting a
+	// single field opts the other two out of [DefaultSpring] as well and
+	// into [spring.New]'s much softer per-field defaults, so partial
+	// overrides do not do what they look like they do — set all three
+	// fields or none.
 	Spring spring.Options
 
 	// FromScale is the scale at the Hidden end of the animation. Zero

@@ -3,22 +3,42 @@
 //
 // A shadow is a soft black fringe around a "shadow rectangle" — the
 // caller's bounds shifted downward by half the elevation extent — to
-// approximate light from above. The geometry mirrors [pulse/glow.Halo]
-// but with two differences:
+// approximate light from above. The geometry mirrors
+// [github.com/vibrantgio/pulse/glow.Halo] but with two differences:
 //
-//   - The colour is a fixed Material-style key-shadow black; intensity
-//     is a function of elevation, not a caller knob.
-//   - The shadow rectangle's interior is filled with the inner alpha so
-//     the strip extending below bounds remains visible once the caller
-//     paints their foreground rectangle on top.
+//   - The shadow rectangle's interior is filled at the peak alpha too,
+//     so the strip extending below bounds stays visible once the caller
+//     paints their foreground on top.
+//   - Nothing about the colour is a parameter. It is a fixed key-shadow
+//     black at a fixed peak alpha, and neither varies with the elevation
+//     level — only the geometry does.
 //
-// Both extent (gradient falloff distance) and offset (downward shift of
-// the shadow rectangle) are derived from [tokens.ElevationLevel] via
-// [tokens.Elevation]: extent equals the level's dp value; offset is
-// half the extent.
+// Extent (the gradient's falloff distance) and offset (the downward
+// shift of the shadow rectangle) both follow the level: extent is the
+// level's dp value from [tokens.Elevation] converted to pixels through
+// gtx.Metric, and offset is half of that. [tokens.Level0] — and any
+// level whose dp rounds to zero pixels at the current density — paints
+// nothing at all.
 //
-// The shadow is painted before the foreground; the caller draws their
-// rectangle on top of [Shadow]'s output.
+// # Three things a caller trips on
+//
+// The interior fill is a hard rectangle. [Shadow] paints before the
+// foreground and the caller draws over it, so that fill is normally
+// hidden — but a foreground with rounded corners does not hide it, and
+// the fill's four square corners show through the rounding as dark
+// wedges. Every consumer of this package in the organization paints a
+// rounded rectangle (cadence/card, cadence/toast, workbench/mindchat),
+// so that is the default outcome rather than an edge case.
+//
+// There is no opacity parameter. A shadow that has to fade with the
+// surface it sits under needs the caller to wrap the call in a
+// [paint.PushOpacity] layer, which is what cadence/toast does to keep
+// the shadow from outliving a toast's fade.
+//
+// The black is not a token role, so it does not follow the theme. The
+// same call separates a surface strongly on a light background and
+// barely at all on a dark one; a dark theme that wants visible
+// elevation needs something other than this package.
 package depth
 
 import (

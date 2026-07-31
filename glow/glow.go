@@ -35,6 +35,28 @@
 // The interior of bounds is never touched: callers that want the
 // halo to sit beneath a foreground shape should call [Halo] first
 // and then draw the shape on top.
+//
+// # What the caller has to handle
+//
+// [Halo] draws entirely outside bounds and returns nothing. It is not a
+// [layout.Widget] and it reserves no space, so in a [layout.Flex] the
+// halo spills over whatever sits next to it unless the caller either
+// insets by Radius to make room or pushes a [clip.Rect] to cut it off.
+// Nothing in this package can do that for you — it does not know what
+// bounds means in the surrounding layout.
+//
+// [Options.Radius] is in pixels, not dp. The same Radius is a visibly
+// wider halo on a 1x display than on a 2x one, which is backwards from
+// every other size in the design system; convert with gtx.Dp first if
+// the halo should look the same at both densities.
+//
+// The falloff is an approximation twice over. Eight linear gradients
+// are not a radial gradient — the alpha along a diagonal differs from
+// the alpha at the same distance along an axis — and the shape is
+// always the bounds rectangle, so a halo around a rounded or circular
+// foreground is squared off at the corners. A blur-based glow that
+// would fix both is scheduled for a later release, and this package
+// keeps the gradient path until that comparison is actually made.
 package glow
 
 import (

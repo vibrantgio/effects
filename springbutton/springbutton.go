@@ -1,15 +1,17 @@
-// Package springbutton ships the spring-physics variant of prism.Button
-// — the `pulse.SpringButton` referenced in DESIGN §"Phase 3 —
-// Composition mechanism".
+// Package springbutton ships the spring-physics variant of
+// prism/button: the same button, with a press that scales down and
+// springs back.
 //
-// The variant is exported as a sibling of [prism/button.Button], not a
-// decorator over it: the dependency direction is Pulse → Prism only.
-// SpringButton owns its own [widget.Clickable] and renders the button
-// through prism/button.Render (the pure renderer), then wraps the
-// output in an [op.Affine] scale driven by a [pulse/spring.Spring].
-// The underlying prism.Button visual contract — hover, focus, press,
-// disabled colours; 44 dp minimum hit target; semantic ops — is
-// preserved.
+// It is a sibling of [github.com/vibrantgio/prism/button.Button], not a
+// decorator over it. Pulse never animates prism globally — a caller
+// picks the animated component by name, so the call site says what it
+// does and the dependency runs pulse → prism and never back.
+// SpringButton owns its own [widget.Clickable] and renders through
+// [github.com/vibrantgio/prism/button.Render], the pure renderer, then
+// wraps the output in an [op.Affine] scale driven by a
+// [github.com/vibrantgio/pulse/spring.Spring]. The underlying button's
+// visual contract — hover, focus, press, disabled colours; 44 dp
+// minimum hit target; semantic ops — is preserved.
 //
 //	// Static prism.Button:
 //	w, _ := button.Button(theme, button.Props{Label: "Save", OnClick: save}).First()
@@ -24,24 +26,45 @@
 //
 // On press, the spring retargets to [Options.PressScale]; on release,
 // back to 1.0. The free particle's position is read every frame as a
-// scale factor applied around the button's centre. Default parameters
-// (Stiffness 300, Damping 22, Mass 1) put the underdamped settle time
-// near 250 ms — long enough that a typical button tap is visible, short
-// enough that the bounce-back from a release does not overhang the next
-// interaction.
+// scale factor applied around the button's centre. The default
+// parameters (Stiffness 300, Damping 22, Mass 1) are underdamped, so
+// the release overshoots slightly and comes back — the "pop". Measured
+// against this package's own settle tolerance, a press-and-release
+// settles 25 frames after the release.
 //
-// While the spring is in flight (not yet [pulse/spring.Settled]) the
-// widget schedules its own redraws via [op.InvalidateCmd]; once it
-// settles, no further frames are requested. This means a SpringButton
-// at rest costs the same per frame as a static prism.Button.
+// While the spring is in flight the widget schedules its own redraws
+// via [op.InvalidateCmd]; once it settles, no further frames are
+// requested, so a SpringButton at rest costs the same per frame as a
+// static prism button.
+//
+// # Frames, not seconds
+//
+// The spring is ticked at a hard-coded inverse step of 60 rather than
+// at the window's real frame rate, so those 25 frames are 25 frames
+// whatever the display does. On a 120 Hz screen the press animation
+// takes half the wall-clock time it takes on a 60 Hz one, and under a
+// stuttering host it stretches out to match. Nothing here reads the
+// frame rate, and there is no option to supply it; a frame-rate-aware
+// step is a later refinement, shared with
+// [github.com/vibrantgio/pulse/conductor].
+//
+// # Fonts
+//
+// A SpringButton with no Shaper in its props builds one from
+// gioui.org/font/gofont, inherited from prism/button, which does the
+// same. In an application that otherwise renders through
+// github.com/vibrantgio/font, that means this one button silently comes
+// out in Go Regular. Pass Props.Shaper until the organization's font
+// migration removes the fallback.
 //
 // # State scope
 //
-// The clickable, the spring, and the default shaper are allocated
-// inside the [rx.Defer] closure, so they persist across theme/disabled
-// emissions and across frames for the lifetime of one subscription,
-// per DESIGN §"The rx.Defer Subscription-State Pattern". A new
-// subscription resets the physics.
+// The clickable, the spring, and the fallback shaper are allocated
+// inside the rx.Defer closure, so they persist across theme and
+// disabled emissions and across frames for the lifetime of one
+// subscription. A new subscription resets the physics — a button that
+// is subscribed twice has two independent springs, and one that is
+// resubscribed mid-press restarts at scale 1.
 package springbutton
 
 import (
@@ -65,11 +88,13 @@ import (
 // of the scale change is small (8 %), so the spring must be stiff
 // enough to traverse most of it within a ~150 ms press window at a
 // 60 Hz frame rate. Stiffness 300 with Damping 22 (zeta ≈ 0.635) gives
-// a small overshoot for "pop" feel and settles in ~250 ms.
+// a small overshoot for "pop" feel. Measured against settleTolerance,
+// each leg settles 25 frames after the pointer event — ~415 ms at
+// 60 Hz, not the ~250 ms this was tuned for.
 const (
-	DefaultStiffness = 300.0
-	DefaultDamping   = 22.0
-	DefaultMass      = 1.0
+	DefaultStiffness  = 300.0
+	DefaultDamping    = 22.0
+	DefaultMass       = 1.0
 	DefaultPressScale = 0.92
 	settleTolerance   = 0.001
 )

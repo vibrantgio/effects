@@ -5,10 +5,34 @@
 // easing, and no clock. Callers drive it by passing a frame index to
 // [Tween.At]. The frame index is whatever the caller chooses to use as
 // "time" — render-loop frames, real-time samples, or test fixtures.
+// cadence/toast counts Frames in milliseconds and feeds [Tween.At] a
+// millisecond age, which works precisely because the unit is never
+// interpreted here.
 //
 // Pulse uses Tween for motion that is cheap, predictable, and where
-// physical realism is not the goal. Reach for pulse/spring when the
-// motion needs to feel physical.
+// physical realism is not the goal. Reach for
+// [github.com/vibrantgio/pulse/spring] when the motion needs to feel
+// physical.
+//
+// # Two ways to get nothing back
+//
+// Lerp is not optional, and forgetting it does not fail where you would
+// notice. [Tween.At] returns From or To directly at the ends of the
+// range, so a Tween built without a Lerp survives At(0) and
+// At(Frames) — and panics with a nil function call on the first index
+// strictly between them. A test that only samples the endpoints passes.
+//
+// Frames must be positive. A zero Frames — the field is easy to leave
+// out of a composite literal — makes [Tween.At] return From at every
+// index, so the animation silently never starts rather than reporting
+// an error.
+//
+// There is no easing here at all: interpolation is linear in the
+// parameter, and a non-linear curve is the caller's to apply to the
+// index or to build into Lerp. [LerpNRGBA] in particular averages 8-bit
+// sRGB channels with no gamma or perceptual correction, so a sweep
+// between two saturated colours can pass through a duller midpoint than
+// either end.
 package tween
 
 import "image/color"

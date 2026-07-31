@@ -31,14 +31,14 @@ func criticalDamping(k, m float64) float64 {
 // the exact bit pattern of velocity-Verlet rounding.
 func TestSpringSettlesWithinToleranceUnderFixedSeed(t *testing.T) {
 	const (
-		start    = 0.0
-		target   = 1.0
-		k        = 20.0
-		m        = 1.0
-		invDt    = 60.0
-		ticks    = 200
-		posTol   = 0.005
-		velTol   = 0.05
+		start  = 0.0
+		target = 1.0
+		k      = 20.0
+		m      = 1.0
+		invDt  = 60.0
+		ticks  = 200
+		posTol = 0.005
+		velTol = 0.05
 	)
 	sp := spring.New(start, target, spring.Options{
 		Stiffness: k,

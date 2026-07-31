@@ -7,17 +7,31 @@
 //
 // Reach for spring when motion needs to feel physical: button presses,
 // list reveals, focus rings, drag inertia. For non-physical motion —
-// fades, slides, simple colour interpolation — pulse/tween is cheaper
-// and more predictable.
+// fades, slides, simple colour interpolation —
+// [github.com/vibrantgio/pulse/tween] is cheaper and more predictable.
+//
+// # The zero Options is not a usable default
+//
+// [Options] fills its zero fields from [DefaultStiffness],
+// [DefaultDamping] and [DefaultMass], and that combination is far
+// softer than any UI motion wants: measured at invDt=60, a
+// spring.New(0, 1, spring.Options{}) does not reach Settled(0.005)
+// until frame 873 — about fifteen seconds of continuous redraw. Neither
+// consumer in this module goes near it; motion uses k=80 and
+// springbutton k=300, and both set all three fields. Treat Options as
+// required rather than optional, and pick the three values together —
+// [Options.Damping] is only meaningful relative to
+// [Options.Stiffness] and [Options.Mass], so overriding one field and
+// inheriting the others is how a spring ends up ringing.
 //
 // # Defer-scoped allocation
 //
 // A Spring is stateful. It must be allocated once per subscription and
 // kept alive across emissions and frames; reconstructing it inside a
 // per-emission map function or a per-frame layout function would reset
-// the simulation every render. The canonical pattern is to allocate
-// inside an [rx.Defer] closure (DESIGN §"The rx.Defer Subscription-State
-// Pattern"):
+// the simulation every render. The canonical pattern — the same one
+// every prism component uses for its interaction state — is to allocate
+// inside an rx.Defer closure:
 //
 //	rx.Defer(func() rx.Observable[layout.Widget] {
 //	    sp := spring.New(0, 0, spring.Options{Stiffness: 20, Damping: 8.94})
@@ -37,12 +51,13 @@
 // # Time step
 //
 // [Spring.Tick] takes invDt — the inverse of the simulation step,
-// matching [traer.ParticleSystem.Tick]. The DESIGN-recommended frame
-// loop convention is max(1, fps/30): floor the step at 1 (ensuring a
-// dt no larger than 1s under starvation) and otherwise pass the
-// instantaneous frame rate divided by 30 (the original Traer Physics
-// reference rate). This trades real-time accuracy for Verlet stability
-// when the host stutters.
+// matching [traer.ParticleSystem.Tick]. The convention across this
+// module is max(1, fps/30): floor the step at 1 (ensuring a dt no
+// larger than 1 s under starvation) and otherwise pass the instantaneous
+// frame rate divided by 30, the original Traer Physics reference rate.
+// This trades real-time accuracy for Verlet stability when the host
+// stutters, and it is why a spring's duration is measured in frames
+// here rather than in seconds.
 package spring
 
 import (
@@ -51,9 +66,11 @@ import (
 	"github.com/vibrantgio/traer"
 )
 
-// Default parameters approximate a moderately stiff, lightly underdamped
-// spring — visible motion with one small overshoot before settling.
-// Callers tuning for a specific feel should override all three.
+// Default parameters describe a very soft, lightly underdamped spring:
+// ζ ≈ 0.55, and slow enough at invDt=60 that [Spring.Settled] at
+// tolerance 0.005 is not reached until frame 873. They are a fallback
+// for a partially filled [Options], not a recommendation. Override all
+// three.
 const (
 	DefaultStiffness = 0.4
 	DefaultDamping   = 0.7
