@@ -1,6 +1,6 @@
 # pulse
 
-The effects layer of [VibrantGio](https://github.com/vibrantgio), a design
+The effects layer of [Vibrant Gio](https://github.com/vibrantgio), a design
 system for native desktop applications on macOS, Windows and Linux, written in
 pure Go on [Gio](https://gioui.org). pulse is where a component stops being
 correct and starts being alive: the shadow under a card, the halo around a

@@ -1,10 +1,10 @@
 # AGENTS.md — pulse
 
-The effects layer of the VibrantGio design system: the `tween` and `spring`
-interpolators, `conductor`'s shared animation clock, `glow` and `depth` for
-luminance halos and Material-style cast shadows, `motion`'s enter and exit
-primitives, and `springbutton`, the spring-physics variant of prism's
-button.
+The effects layer of the Vibrant Gio design system: the `tween` and
+`spring` interpolators, `conductor`'s shared animation clock, `glow` and
+`depth` for luminance halos and Material-style cast shadows, `motion`'s
+enter and exit primitives, and `springbutton`, the spring-physics variant
+of prism's button.
 
 **Layer.** Tier 3 of ADR-001's stack, `mvu → spectrum → prism → pulse →
 cadence → markdown`. It imports mvu, `prism/button`, `prism/theme` and
