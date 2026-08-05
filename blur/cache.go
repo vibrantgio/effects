@@ -15,8 +15,9 @@ import (
 // a leak.
 const maxEntries = 8
 
-// DefaultDivisor returns the downscale divisor [Cache.Image] uses
-// when no [WithDivisor] option is given: the largest power of two no
+// DefaultDivisor returns the downscale divisor [Cache.Image] and
+// [Backdrop.Update] use when no [WithDivisor] option is given: the
+// largest power of two no
 // greater than sigma/2, clamped to [1, 8]. A Gaussian blur of
 // standard deviation sigma destroys detail finer than roughly sigma
 // source pixels, so blurring at 1/divisor resolution loses nothing
@@ -30,7 +31,7 @@ func DefaultDivisor(sigma float64) int {
 	return d
 }
 
-// An Option adjusts a single [Cache.Image] call.
+// An Option adjusts a single [Cache.Image] or [Backdrop.Update] call.
 type Option func(*options)
 
 type options struct {
@@ -38,9 +39,10 @@ type options struct {
 }
 
 // WithDivisor overrides the downscale divisor for one [Cache.Image]
-// call. The source is scaled to 1/n of its size before blurring and
-// the returned op stays at that reduced size. Values below 1 fall
-// back to [DefaultDivisor]. The divisor is part of the cache key.
+// or [Backdrop.Update] call. The source is scaled to 1/n of its size
+// before blurring and the returned op stays at that reduced size.
+// Values below 1 fall back to [DefaultDivisor]. For Cache the divisor
+// is part of the cache key.
 func WithDivisor(n int) Option {
 	return func(o *options) {
 		o.divisor = n

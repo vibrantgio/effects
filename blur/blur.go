@@ -43,24 +43,32 @@
 //
 // # Measured cost
 //
-// Blur-only cost of (*Blurrer).Gaussian at the resolutions of the
-// G-E4 pipeline table, measured on the same ten-core Apple Silicon
-// machine (go test -bench, darwin/arm64). Sigma follows the backdrop
-// model: the blur radius lives in source pixels, so halving the
-// resolution halves sigma (σ=8 at full resolution). The plan's table
-// times the full pipeline — headless render, readback, blur — so
-// these blur-only numbers are one component of those totals, which
-// E4.3 validates:
+// Blur-only cost of (*Blurrer).Gaussian and full [Backdrop] pipeline
+// cost — record ops, headless render, readback, blur — for a 1440×900
+// backdrop at each divisor, measured on the same ten-core Apple
+// Silicon machine (go test -bench, darwin/arm64). Sigma follows the
+// backdrop model: the look is σ=8 in full-resolution pixels, so the
+// blur runs at σ=8/divisor on the reduced pixels:
 //
-//	÷1  1440×900  σ=8   5.8  ms      (pipeline table: 69.2 ms)
-//	÷2   720×450  σ=4   1.8  ms      (pipeline table: 12.9 ms)
-//	÷4   360×225  σ=2   0.74 ms      (pipeline table:  3.8 ms)
-//	÷8   180×112  σ=1   0.35 ms      (pipeline table:  1.6 ms)
+//	÷1  1440×900  σ=8   blur  5.8  ms   pipeline 29.0 ms   (plan table 69.2 ms)
+//	÷2   720×450  σ=4   blur  1.8  ms   pipeline  8.1 ms   (plan table 12.9 ms)
+//	÷4   360×225  σ=2   blur  0.74 ms   pipeline  2.9 ms   (plan table  3.8 ms)
+//	÷8   180×112  σ=1   blur  0.35 ms   pipeline  1.1 ms   (plan table  1.6 ms)
 //
 // Parallelism buys ~5× over the serial path at 1440×900; the smaller
 // sizes are increasingly barrier-bound, which is why they fall short
 // of linear scaling. At the working configuration (÷4) the blur
 // itself is ~4% of a 16.7 ms frame budget.
+//
+// The assembled pipeline (E4.3) comes in under the G-E4 plan table in
+// every row while scaling the same way — the table's caveats are what
+// the implementation pins down: the headless window and readback
+// buffer are reused across updates, the blur runs in place on the
+// readback, and no image-sized buffer is allocated in steady state. A
+// heavier layer barely moves the totals (a fresh full-resolution
+// texture upload per update adds ~0.5 ms at ÷1); synchronous GPU
+// readback dominates, which is why the resolution divisor is the lever
+// that matters.
 package blur
 
 import (
