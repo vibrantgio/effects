@@ -9,6 +9,7 @@ require (
 	github.com/vibrantgio/prism v0.1.8
 	github.com/vibrantgio/spectrum v0.0.14
 	github.com/vibrantgio/traer v0.0.8
+	golang.org/x/image v0.44.0
 )
 
 require (
@@ -18,7 +19,6 @@ require (
 	github.com/reactivego/scheduler v0.2.0 // indirect
 	github.com/vibrantgio/font v0.0.4 // indirect
 	golang.org/x/exp/shiny v0.0.0-20260727155853-b88d891fe743 // indirect
-	golang.org/x/image v0.44.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
