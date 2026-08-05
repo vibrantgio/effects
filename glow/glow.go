@@ -54,9 +54,67 @@
 // are not a radial gradient — the alpha along a diagonal differs from
 // the alpha at the same distance along an axis — and the shape is
 // always the bounds rectangle, so a halo around a rounded or circular
-// foreground is squared off at the corners. A blur-based glow that
-// would fix both is scheduled for a later release, and this package
-// keeps the gradient path until that comparison is actually made.
+// foreground is squared off at the corners. A blur-based glow would
+// fix both; it was prototyped, measured and rejected — see below.
+//
+// # Why not a real blur (E4.4 evaluation)
+//
+// A blur-based glow was prototyped against this package: rasterize
+// the shape at peak alpha, Gaussian-blur it with pulse/blur at
+// sigma = Radius/2 (so both falloffs reach zero at Radius), and paint
+// the result as an image. The prototype, the falloff-comparison test
+// and the benchmarks live in blurglow_test.go; it deliberately does
+// not ship as API.
+//
+// Visually the blur is the better halo: a true radial falloff with
+// smooth rounded corners and no tile seams. The gradient rim is
+// visibly chamfered — the corner tiles' far stop sits at Radius/√2,
+// so the diagonal falloff dies at ~0.71·Radius with a C0 kink, an
+// octagonal rim that grows more obvious with Radius. Measured halo
+// coverage over a dark background at Radius 16 (0 = background,
+// 1 = opaque halo): at 0.75·Radius the gradient reads 0.43 along an
+// edge normal but 0.00 along the 45° diagonal, where the blur reads a
+// consistent 0.02/0.005. The blur is not a drop-in either: blurring a
+// step edge halves it, so its inner rim renders at 0.39 coverage
+// where the gradient renders 0.99 — at equal Intensity the blur halo
+// looks roughly half as bright with a shorter perceived reach, and a
+// replacement would need intensity compensation or pre-blur shape
+// dilation.
+//
+// The animated cost decided it. Per-frame cost of one glow, measured
+// on a ten-core Apple Silicon machine (darwin/arm64, go test -bench,
+// 2026-08-05):
+//
+//	gradient path, op recording (whole per-frame cost)   0.5 µs    ~0 B/frame
+//	blur, 132×72 canvas (100×40 button, R=16, σ=8)       0.23 ms    51 KB/frame
+//	blur, 348×144 canvas (300×96 card, R=24, σ=12)       0.82 ms   227 KB/frame
+//	blur via headless render (arbitrary shapes, ÷1)      0.70 ms   (132×72)
+//	headless frame of the gradient scene, 160×100        0.27 ms
+//	headless frame of the blur scene, 160×100            0.43 ms
+//
+// A static glow could pay the blur once and cache the image, but the
+// glows worth having animate — Radius or Intensity driven by a spring
+// — and a cache keyed on shape parameters (size, radius, colour,
+// intensity) misses every frame by construction while the parameters
+// move. (pulse/blur.Cache does not offer that keying anyway: it keys
+// on source-image identity.) An animating blur-glow therefore costs
+// 0.2–0.8 ms of events-thread CPU plus an image-sized allocation and
+// a texture upload per glow per frame, against the gradient path's
+// ~0.5 µs — and a screen of N glowing widgets multiplies it. Per the
+// G-E4 rule that a correct approximation beats a slow exact answer,
+// the gradient path stays.
+//
+// Two findings for whoever revisits this. pulse/blur blurs
+// straight-alpha channels independently (its documented translucency
+// caveat), so a blur-glow must keep the colour planes uniform across
+// the whole canvas and let alpha alone carry the shape — blurring a
+// coloured shape over transparent black bleeds black into the halo
+// and dims it to roughly alpha². That trick only works for a
+// single-colour glow; an arbitrary multi-colour source would need a
+// premultiplied-correct blur first. And if a static blur-glow is ever
+// wanted (it did look better), the missing piece is small: a cache
+// keyed on (size, corner radius, sigma, colour, intensity) in front
+// of the prototype in blurglow_test.go.
 package glow
 
 import (
