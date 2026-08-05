@@ -56,9 +56,9 @@ func TestThemeTransitionGolden(t *testing.T) {
 }
 
 // paintSwatch fills img with colors.Background, then paints five vertical
-// bands showing Surface, Primary, Secondary, OnPrimary, and Outline. These
-// fields together carry enough contrast to make light/dark/midpoint frames
-// visually distinct in the golden PNGs.
+// bands showing Surface, Primary, Secondary, OnPrimary, and the Neutral 500
+// strong-border step. These fields together carry enough contrast to make
+// light/dark/midpoint frames visually distinct in the golden PNGs.
 func paintSwatch(img *image.NRGBA, colors tokens.ColorTokens) {
 	bounds := img.Bounds()
 	draw.Draw(img, bounds, &image.Uniform{C: colors.Background}, image.Point{}, draw.Src)
@@ -68,7 +68,7 @@ func paintSwatch(img *image.NRGBA, colors tokens.ColorTokens) {
 		colors.Primary,
 		colors.Secondary,
 		colors.OnPrimary,
-		colors.Outline,
+		colors.Ramps.Neutral.Step(500),
 	}
 	bandW := bounds.Dx() / len(bands)
 	const inset = 10
