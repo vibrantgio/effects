@@ -1,6 +1,41 @@
 // Package depth renders Material-style cast shadows under rectangular
 // regions by composing linear gradients.
 //
+// # An explicit effect, never a default
+//
+// A shadow is opt-in vibrancy, not something a component gets for
+// being raised. Per ADR-005, a raised surface on desktop reads as
+// raised by tint first and shadow second: it names its rung on
+// [tokens.ElevationScale] and paints the neutral-ramp colour that
+// (tokens.ColorTokens).SurfaceAt resolves — one fill, no shadow. A
+// shadow is right only for what floats and can leave: transient,
+// dismissible surfaces above the plane — a toast, a popover, a menu, a
+// drag preview. What is raised in place — a card, a header, static
+// hierarchy — reads as raised by its surface step alone, and no
+// component should default into calling this package for it.
+//
+// The cost difference backs the rule. One [Shadow] call issues eight
+// [paint.LinearGradientOp] fills — four edge bands and four corner
+// tiles — plus one flat interior fill: nine paint operations per
+// shadow, every frame it is drawn. A surface step is a single
+// [paint.FillShape].
+//
+// # Caller audit (E2.2)
+//
+// The organization's three callers, judged against that criterion:
+//
+//   - cadence/toast keeps its shadow: a toast floats over the content
+//     plane and leaves on its own, and on dark themes the shadow, not
+//     the fill, is what separates it.
+//   - workbench/mindchat's undo bar keeps its shadow: a transient bar
+//     floating over the chat surfaces, a toast by another name. (App
+//     code is not governed by this verdict; recorded as guidance.)
+//   - cadence/card's Elevated variant loses its shadow: a card is
+//     raised in place, so it becomes a level-2 surface fill. E2.3
+//     executes the migration.
+//
+// # Geometry
+//
 // A shadow is a soft black fringe around a "shadow rectangle" — the
 // caller's bounds shifted downward by half the elevation extent — to
 // approximate light from above. The geometry mirrors
