@@ -31,10 +31,33 @@ import (
 	"github.com/vibrantgio/spectrum/tokens"
 )
 
+// lerpRamp interpolates each step of two [tokens.Ramp] values using
+// [tween.LerpNRGBA].
+func lerpRamp(from, to tokens.Ramp, t float64) tokens.Ramp {
+	var r tokens.Ramp
+	for i := range r {
+		r[i] = tween.LerpNRGBA(from[i], to[i], t)
+	}
+	return r
+}
+
 // LerpColorTokens interpolates each colour field of two
-// [tokens.ColorTokens] using [tween.LerpNRGBA].
+// [tokens.ColorTokens] using [tween.LerpNRGBA] — the functional ramps and
+// pinned bases as well as the deprecated MD3-named alias fields, so the
+// result at t=0 and t=1 equals the endpoints exactly.
 func LerpColorTokens(from, to tokens.ColorTokens, t float64) tokens.ColorTokens {
 	return tokens.ColorTokens{
+		Ramps: tokens.RampSet{
+			Neutral:   lerpRamp(from.Ramps.Neutral, to.Ramps.Neutral, t),
+			Primary:   lerpRamp(from.Ramps.Primary, to.Ramps.Primary, t),
+			Secondary: lerpRamp(from.Ramps.Secondary, to.Ramps.Secondary, t),
+			Tertiary:  lerpRamp(from.Ramps.Tertiary, to.Ramps.Tertiary, t),
+			Error:     lerpRamp(from.Ramps.Error, to.Ramps.Error, t),
+		},
+		Tertiary:         tween.LerpNRGBA(from.Tertiary, to.Tertiary, t),
+		OnTertiary:       tween.LerpNRGBA(from.OnTertiary, to.OnTertiary, t),
+		Text:             tween.LerpNRGBA(from.Text, to.Text, t),
+		Divider:          tween.LerpNRGBA(from.Divider, to.Divider, t),
 		Background:       tween.LerpNRGBA(from.Background, to.Background, t),
 		OnBackground:     tween.LerpNRGBA(from.OnBackground, to.OnBackground, t),
 		Surface:          tween.LerpNRGBA(from.Surface, to.Surface, t),
