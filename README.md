@@ -219,11 +219,12 @@ estimated.
   half that on a 120 Hz one. `tween` and `conductor` count frames by
   construction. A frame-rate-aware step is unwritten; Phase E adds MD3 duration
   stops and spring specifications to the token set for this layer to consume.
-- **`springbutton` falls back to gofont.** With no `Shaper` in its props it
-  builds one from `gioui.org/font/gofont`, inherited from `prism/button`, so a
-  single button comes out in Go Regular inside an application that otherwise
-  renders through [font](https://github.com/vibrantgio/font). Phase C removes
-  the fallback across the stack; until then, pass `Props.Shaper`.
+- **`springbutton` sizes, but does not style, its label from the theme.** With
+  no `Shaper` in its props it shapes with the theme's cached Typography shaper
+  (`Props.Shaper` is an explicit override only). But it renders through
+  `prism/button.Render`, which applies only the LabelLarge *size* — typeface,
+  weight and line height stay at the shaper's defaults, so the label comes out
+  Roboto Regular where the static button renders Roboto Medium.
 - **Reduced motion is not honoured.** `prism/a11y` publishes the OS
   reduce-motion preference and nothing in this module reads it, so an animation
   here runs at full amplitude for a user who has asked the system for less.

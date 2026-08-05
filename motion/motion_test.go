@@ -10,18 +10,16 @@ import (
 	"strings"
 	"testing"
 
-	"gioui.org/font/gofont"
 	"gioui.org/gpu/headless"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
-	"gioui.org/text"
 	"gioui.org/unit"
 
 	"github.com/vibrantgio/prism/button"
-	"github.com/vibrantgio/prism/tokens"
 	motion "github.com/vibrantgio/pulse/motion"
+	"github.com/vibrantgio/spectrum/tokens"
 )
 
 // goldenUpdate, when set, overwrites stored goldens with the live
@@ -48,9 +46,10 @@ var (
 
 // ---- button rendering ----
 
-// shaper is constructed once per test process; shaper construction
-// dominates the per-test wall time otherwise.
-var shaper = text.NewShaper(text.NoSystemFonts(), text.WithCollection(gofont.Collection()))
+// shaper is the canonical Roboto shaper, built once and cached inside
+// tokens.DefaultTypography; shaper construction dominates the per-test
+// wall time otherwise.
+var shaper = tokens.DefaultTypography.Shaper()
 
 // renderBtn returns a layout.Widget for a button rendered with the
 // given colour tokens and visual state. Sharp-cornered, empty-label —

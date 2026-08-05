@@ -50,17 +50,18 @@
 //
 // # Fonts
 //
-// A SpringButton with no Shaper in its props builds one from
-// gioui.org/font/gofont, inherited from prism/button, which does the
-// same. In an application that otherwise renders through
-// github.com/vibrantgio/font, that means this one button silently comes
-// out in Go Regular. Pass Props.Shaper until the organization's font
-// migration removes the fallback.
+// The label is shaped with the theme's cached shaper
+// (Typography.Shaper(), ADR-003: the theme owns the typeface), sized by
+// the LabelLarge role. Props.Shaper is an explicit per-instance
+// override only; leave it nil in normal use. Because rendering goes
+// through [github.com/vibrantgio/prism/button.Render] — which applies
+// only the role's size, not its typeface, weight or line height — the
+// glyphs come out at the shaper's default face and weight.
 //
 // # State scope
 //
-// The clickable, the spring, and the fallback shaper are allocated
-// inside the rx.Defer closure, so they persist across theme and
+// The clickable and the spring are allocated inside the rx.Defer
+// closure, so they persist across theme and
 // disabled emissions and across frames for the lifetime of one
 // subscription. A new subscription resets the physics — a button that
 // is subscribed twice has two independent springs, and one that is
@@ -69,7 +70,6 @@ package springbutton
 
 import (
 	"gioui.org/f32"
-	"gioui.org/font/gofont"
 	"gioui.org/io/semantic"
 	"gioui.org/layout"
 	"gioui.org/op"
@@ -79,9 +79,9 @@ import (
 	"github.com/reactivego/rx"
 	"github.com/vibrantgio/mvu"
 	"github.com/vibrantgio/prism/button"
-	"github.com/vibrantgio/prism/theme"
-	"github.com/vibrantgio/prism/tokens"
 	"github.com/vibrantgio/pulse/spring"
+	"github.com/vibrantgio/spectrum/theme"
+	"github.com/vibrantgio/spectrum/tokens"
 )
 
 // Defaults tuned for a visible-but-snappy button press. The amplitude
@@ -151,11 +151,22 @@ func SpringButton(
 		disabled = rx.Of(false)
 	}
 
+	// Flatten the nested theme observables into a concrete snapshot. The
+	// typography emission supplies both the LabelLarge text style and the
+	// theme's cached shaper (ADR-003: the theme owns the typeface),
+	// replacing the former Theme.Type source.
 	resolved := rx.SwitchMap(th, func(t theme.Theme) rx.Observable[resolvedTokens] {
 		return rx.Map(
-			rx.CombineLatest4(t.Color, t.Type, t.Spacing, t.Radius),
-			func(n rx.Tuple4[tokens.ColorTokens, tokens.TypeScale, tokens.SpacingScale, tokens.RadiusScale]) resolvedTokens {
-				return resolvedTokens{n.First, n.Second, n.Third, n.Fourth}
+			rx.CombineLatest4(t.Color, t.Typography, t.Spacing, t.Radius),
+			func(n rx.Tuple4[tokens.ColorTokens, tokens.Typography, tokens.SpacingScale, tokens.RadiusScale]) resolvedTokens {
+				typ := n.Second
+				return resolvedTokens{
+					color:   n.First,
+					label:   typ.LabelLarge,
+					spacing: n.Third,
+					radius:  n.Fourth,
+					shaper:  typ.Shaper(),
+				}
 			},
 		)
 	})
@@ -169,13 +180,15 @@ func SpringButton(
 			Damping:   opts.Damping,
 			Mass:      opts.Mass,
 		})
-		shaper := props.Shaper
-		if shaper == nil {
-			shaper = text.NewShaper(text.NoSystemFonts(), text.WithCollection(gofont.Collection()))
-		}
-
 		return rx.Map(inputs, func(next rx.Tuple2[resolvedTokens, bool]) layout.Widget {
 			tok, dis := next.First, next.Second
+
+			// Props.Shaper is an explicit override; the theme's shaper is
+			// the default.
+			shaper := props.Shaper
+			if shaper == nil {
+				shaper = tok.shaper
+			}
 
 			return func(gtx layout.Context) layout.Dimensions {
 				if dis {
@@ -221,10 +234,14 @@ func SpringButton(
 					}
 
 					macro := op.Record(gtx.Ops)
+					// Render reads only the LabelLarge size from its
+					// TypeScale parameter; supply it from the Typography
+					// role so the label sizes like the static button.
 					innerDims := button.Render(
 						shaper,
 						props.Label,
-						tok.color, tok.spacing, tok.radius, tok.typ,
+						tok.color, tok.spacing, tok.radius,
+						tokens.TypeScale{LabelLarge: tok.label.Size},
 						renderState,
 					)(gtx)
 					call := macro.Stop()
@@ -249,11 +266,12 @@ func SpringButton(
 
 // resolvedTokens mirrors the per-emission token snapshot that
 // prism/button keeps unexported. Spring composition operates in the
-// same token space as the static button to ensure the visual contract
-// is identical pixel-for-pixel when scale = 1.
+// same token space as the static button so the visual contract matches
+// at scale = 1 (up to Render's size-only use of the label style).
 type resolvedTokens struct {
 	color   tokens.ColorTokens
-	typ     tokens.TypeScale
+	label   tokens.TextStyle // the LabelLarge role: only Size reaches Render
 	spacing tokens.SpacingScale
 	radius  tokens.RadiusScale
+	shaper  *text.Shaper // the theme's cached shaper
 }

@@ -17,8 +17,8 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 
-	"github.com/vibrantgio/prism/tokens"
 	depth "github.com/vibrantgio/pulse/depth"
+	"github.com/vibrantgio/spectrum/tokens"
 )
 
 // goldenUpdate, when set, overwrites stored goldens with the live

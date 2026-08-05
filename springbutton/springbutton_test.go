@@ -11,9 +11,9 @@ import (
 
 	"github.com/reactivego/rx"
 	"github.com/vibrantgio/prism/button"
-	"github.com/vibrantgio/prism/theme"
 	"github.com/vibrantgio/pulse/spring"
 	"github.com/vibrantgio/pulse/springbutton"
+	"github.com/vibrantgio/spectrum/theme"
 )
 
 // TestSpringButtonObservableEmits is the construction smoke test: the
