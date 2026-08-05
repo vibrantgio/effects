@@ -59,6 +59,7 @@ package motion
 
 import (
 	"math"
+	"time"
 
 	"gioui.org/f32"
 	"gioui.org/layout"
@@ -67,6 +68,7 @@ import (
 
 	"github.com/vibrantgio/pulse/spring"
 	"github.com/vibrantgio/pulse/tween"
+	"github.com/vibrantgio/spectrum/tokens"
 )
 
 // State captures the visual transformation applied to a widget at one
@@ -92,34 +94,53 @@ var Visible = State{Opacity: 1, Scale: 1}
 var Hidden = State{Opacity: 0, Scale: DefaultFromScale}
 
 // Defaults applied when a corresponding [Options] field is zero-valued.
+// Since E3.1 the timing defaults resolve from the spectrum motion tokens
+// ([tokens.Motion], the value every theme.Theme.Motion emits by default)
+// rather than from local constants.
 const (
-	// DefaultFrames is the opacity-tween duration, in frames.
-	DefaultFrames = 30
-
 	// DefaultFromScale is the scale a widget starts at on Enter (and
 	// returns to on Exit).
 	DefaultFromScale = 0.85
 
-	// defaultSpringStiffness and defaultSpringMass parameterise the
-	// motion-package default spring: critical damping (c = 2·√(k·m))
-	// with k=80, m=1. These were chosen to settle in ~30 frames at
-	// invDt=60, matching [DefaultFrames]; measured, the spring reaches
-	// Settled(0.005) at frame 52, so scale outlasts opacity under
-	// default options.
-	defaultSpringStiffness = 80.0
-	defaultSpringMass      = 1.0
+	// defaultFPS is the 60 Hz reference frame rate the token durations
+	// convert to frame counts at.
+	defaultFPS = 60
 )
 
+// DefaultFrames is the opacity-tween duration in frames: the motion
+// scale's slowest stop (DurXSlow, MD3 long2 = 500 ms) at the 60 Hz
+// reference rate — 30 frames, the same count as the constant it
+// replaced, because E3.1 pinned DurXSlow to the 500 ms this package
+// already animated over.
+var DefaultFrames = FramesAt(tokens.Motion.DurXSlow, defaultFPS)
+
+// FramesAt converts a [tokens.MotionScale] duration stop into a whole
+// frame count at the given frame rate, rounding to nearest. It is how a
+// theme-driven caller derives [Options.Frames] from its Theme.Motion
+// snapshot:
+//
+//	opts := motion.Options{Frames: motion.FramesAt(m.DurNormal, 60)}
+func FramesAt(d time.Duration, fps float64) int {
+	return int(math.Round(d.Seconds() * fps))
+}
+
+// SpringOptions converts a [tokens.Spring] preset from the theme's motion
+// scale into [spring.Options] for this package and its siblings.
+func SpringOptions(s tokens.Spring) spring.Options {
+	return spring.Options{
+		Stiffness: float64(s.Stiffness),
+		Damping:   float64(s.Damping),
+		Mass:      float64(s.Mass),
+	}
+}
+
 // DefaultSpring is the [spring.Options] used when [Options.Spring] is
-// zero-valued — and only when it is entirely zero-valued. Critically
-// damped at k=80, m=1: a brisk, no-overshoot curve that reaches
+// zero-valued — and only when it is entirely zero-valued. It is the
+// motion scale's SpringDefault preset: critically damped (c = 2·√(k·m))
+// at k=80, m=1 — a brisk, no-overshoot curve that reaches
 // Settled(0.005) at frame 52 with invDt=60, which is 22 frames past
 // [DefaultFrames] rather than level with it.
-var DefaultSpring = spring.Options{
-	Stiffness: defaultSpringStiffness,
-	Damping:   2 * math.Sqrt(defaultSpringStiffness*defaultSpringMass),
-	Mass:      defaultSpringMass,
-}
+var DefaultSpring = SpringOptions(tokens.Motion.SpringDefault)
 
 // Options configures a single motion primitive. Zero-valued fields are
 // replaced with package defaults at construction time, so the zero
