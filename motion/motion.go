@@ -47,14 +47,14 @@
 // frames past the visible end of the animation, and a caller that stops
 // at Frames leaves the widget fractionally undersized.
 //
-// [Options.Spring] has a sharper edge. It falls back to [DefaultSpring]
-// only when the whole struct is zero. Set one field — Spring:
-// spring.Options{Stiffness: 200} — and the other two do not come from
-// [DefaultSpring] at all; they come from
-// [github.com/vibrantgio/pulse/spring]'s own per-field defaults, which
-// are a much softer spring. The result is a damping ratio near 0.02
-// that rings for thousands of frames. Override all three fields or
-// none.
+// [Options.Spring] falls back to [DefaultSpring] only when the whole
+// struct is zero, but since FX.2 that distinction has no teeth:
+// [github.com/vibrantgio/pulse/spring]'s own defaults are the same
+// SpringDefault values (Stiffness 80, Mass 1), and a zero Damping
+// derives critical damping 2·√(k·m) from the resolved fields. A
+// partial override — Spring: spring.Options{Stiffness: 200} — is
+// therefore a critically damped k=200 spring, not the ζ ≈ 0.02 ringer
+// it used to be.
 package motion
 
 import (
@@ -152,11 +152,12 @@ type Options struct {
 	Frames int
 
 	// Spring is the [spring.Options] for the scale animation. Only the
-	// wholly zero value is replaced with [DefaultSpring]. Setting a
-	// single field opts the other two out of [DefaultSpring] as well and
-	// into [spring.New]'s much softer per-field defaults, so partial
-	// overrides do not do what they look like they do — set all three
-	// fields or none.
+	// wholly zero value is replaced with [DefaultSpring]; a partly
+	// filled value goes to [spring.New] as-is, whose own defaults have
+	// matched [DefaultSpring] since FX.2 (zero Stiffness/Mass fill with
+	// 80/1, zero Damping derives critical damping for the resolved
+	// values), so a partial override stays critically damped at the
+	// stiffness it names.
 	Spring spring.Options
 
 	// FromScale is the scale at the Hidden end of the animation. Zero

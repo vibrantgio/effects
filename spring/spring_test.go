@@ -176,16 +176,86 @@ func TestNewInitialState(t *testing.T) {
 	}
 }
 
-// TestNewAppliesDefaults asserts zero-valued option fields are
-// replaced with the package defaults rather than left at zero (which
-// would produce a degenerate spring with no force or no mass).
-func TestNewAppliesDefaults(t *testing.T) {
-	sp := spring.New(0, 1, spring.Options{})
-	for range 5000 {
+// settleFrame ticks sp at invDt=60 and returns the first frame at
+// which Settled(tol) holds, or -1 if it never does within limit
+// frames.
+func settleFrame(sp *spring.Spring, tol float64, limit int) int {
+	for f := 1; f <= limit; f++ {
 		sp.Tick(60)
+		if sp.Settled(tol) {
+			return f
+		}
 	}
-	if !sp.Settled(0.01) {
-		t.Errorf("default-options spring did not settle; value=%v vel=%v (defaults must produce a working spring)",
-			sp.Value(), sp.Velocity())
+	return -1
+}
+
+// TestZeroOptionsSettleFrame is the FX.2 headline: the zero Options is
+// a usable default. It resolves to tokens.Motion.SpringDefault's
+// values — k=80, m=1, critically damped — and a 0→1 spring reaches
+// Settled(0.005) at frame 68 with invDt=60 (~1.1 s at 60 Hz). The old
+// per-field defaults (k=0.4, c=0.7) took 873 frames. The simulation is
+// deterministic, so the frame count is asserted exactly: a change here
+// is a change to the default feel and should be deliberate.
+func TestZeroOptionsSettleFrame(t *testing.T) {
+	sp := spring.New(0, 1, spring.Options{})
+	if got := settleFrame(sp, 0.005, 5000); got != 68 {
+		t.Errorf("zero-Options spring settled at frame %d, want 68", got)
+	}
+}
+
+// TestStiffnessOnlyMatchesZeroOptions locks the derived-damping
+// contract: Options{Stiffness: 80} alone must behave identically to
+// the zero Options (both resolve to k=80, m=1, c=2·√80), and both must
+// match the fully explicit spelling bit for bit. Before FX.2 the
+// one-field override inherited the soft per-field defaults and landed
+// at ζ ≈ 0.04, ringing for thousands of frames.
+func TestStiffnessOnlyMatchesZeroOptions(t *testing.T) {
+	zero := spring.New(0, 1, spring.Options{})
+	oneField := spring.New(0, 1, spring.Options{Stiffness: 80})
+	explicit := spring.New(0, 1, spring.Options{
+		Stiffness: 80, Damping: criticalDamping(80, 1), Mass: 1,
+	})
+	for n := range 200 {
+		zero.Tick(60)
+		oneField.Tick(60)
+		explicit.Tick(60)
+		if oneField.Value() != zero.Value() || oneField.Value() != explicit.Value() {
+			t.Fatalf("frame %d: values diverge: zero=%v oneField=%v explicit=%v",
+				n, zero.Value(), oneField.Value(), explicit.Value())
+		}
+		if oneField.Velocity() != zero.Velocity() || oneField.Velocity() != explicit.Velocity() {
+			t.Fatalf("frame %d: velocities diverge: zero=%v oneField=%v explicit=%v",
+				n, zero.Velocity(), oneField.Velocity(), explicit.Velocity())
+		}
+	}
+	if got := settleFrame(spring.New(0, 1, spring.Options{Stiffness: 80}), 0.005, 5000); got != 68 {
+		t.Errorf("Options{Stiffness: 80} settled at frame %d, want 68 (same as zero Options)", got)
+	}
+}
+
+// TestDerivedDampingIsCritical asserts the derivation tracks a
+// non-default override: Options{Stiffness: 300} alone must come out
+// critically damped for k=300 — no overshoot, and a fast settle
+// (frame 39 measured for 0→1 at invDt=60; asserted as a bound so the
+// test pins "brisk and overshoot-free" rather than one k's exact
+// trajectory).
+func TestDerivedDampingIsCritical(t *testing.T) {
+	sp := spring.New(0, 1, spring.Options{Stiffness: 300})
+	maxValue := math.Inf(-1)
+	settled := -1
+	for f := 1; f <= 600; f++ {
+		sp.Tick(60)
+		if v := sp.Value(); v > maxValue {
+			maxValue = v
+		}
+		if settled < 0 && sp.Settled(0.005) {
+			settled = f
+		}
+	}
+	if maxValue > 1 {
+		t.Errorf("Stiffness-only spring overshot: max value %v > target 1 (damping did not derive critical)", maxValue)
+	}
+	if settled < 0 || settled > 60 {
+		t.Errorf("Stiffness-only k=300 spring settled at frame %d, want within 60", settled)
 	}
 }

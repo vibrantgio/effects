@@ -10,19 +10,21 @@
 // fades, slides, simple colour interpolation —
 // [github.com/vibrantgio/pulse/tween] is cheaper and more predictable.
 //
-// # The zero Options is not a usable default
+// # The zero Options is a usable default
 //
-// [Options] fills its zero fields from [DefaultStiffness],
-// [DefaultDamping] and [DefaultMass], and that combination is far
-// softer than any UI motion wants: measured at invDt=60, a
-// spring.New(0, 1, spring.Options{}) does not reach Settled(0.005)
-// until frame 873 — about fifteen seconds of continuous redraw. Neither
-// consumer in this module goes near it; motion uses k=80 and
-// springbutton k=300, and both set all three fields. Treat Options as
-// required rather than optional, and pick the three values together —
-// [Options.Damping] is only meaningful relative to
-// [Options.Stiffness] and [Options.Mass], so overriding one field and
-// inheriting the others is how a spring ends up ringing.
+// [Options] fills a zero Stiffness from [DefaultStiffness] (80) and a
+// zero Mass from [DefaultMass] (1) — the values published as spectrum's
+// tokens.Motion.SpringDefault preset — and then, last, fills a zero
+// Damping with critical damping 2·√(k·m) computed from whatever
+// Stiffness and Mass resolved to. The result is a brisk, no-overshoot
+// curve: measured at invDt=60, spring.New(0, 1, spring.Options{})
+// reaches Settled(0.005) at frame 68, about 1.1 s of continuous
+// redraw. Because the damping derivation runs after the other fields
+// are defaulted, a one-field override behaves: Options{Stiffness: 80}
+// is bit-identical to the zero Options, and Options{Stiffness: 300} is
+// a critically damped k=300 spring rather than one that rings. Pass an
+// explicit Damping below 2·√(k·m) when overshoot is wanted —
+// springbutton's press "pop" is k=300, c=22.
 //
 // # Defer-scoped allocation
 //
@@ -34,7 +36,7 @@
 // inside an rx.Defer closure:
 //
 //	rx.Defer(func() rx.Observable[layout.Widget] {
-//	    sp := spring.New(0, 0, spring.Options{Stiffness: 20, Damping: 8.94})
+//	    sp := spring.New(0, 0, spring.Options{Stiffness: 20}) // damping derives critical: 2·√20
 //	    return rx.Map(targets, func(target float64) layout.Widget {
 //	        sp.SetTarget(target)
 //	        return func(gtx layout.Context) layout.Dimensions {
@@ -66,20 +68,23 @@ import (
 	"github.com/vibrantgio/traer"
 )
 
-// Default parameters describe a very soft, lightly underdamped spring:
-// ζ ≈ 0.55, and slow enough at invDt=60 that [Spring.Settled] at
-// tolerance 0.005 is not reached until frame 873. They are a fallback
-// for a partially filled [Options], not a recommendation. Override all
-// three.
+// Default parameters are the values of spectrum's
+// tokens.Motion.SpringDefault preset (FX.2). They are hardcoded rather
+// than imported: spring is a pure-physics package over traer, and the
+// design-token surface stays out of it. There is no DefaultDamping —
+// the default damping is a rule, not a number: a zero [Options.Damping]
+// derives critical damping 2·√(k·m) from the resolved Stiffness and
+// Mass, so partial overrides stay critically damped.
 const (
-	DefaultStiffness = 0.4
-	DefaultDamping   = 0.7
+	DefaultStiffness = 80.0
 	DefaultMass      = 1.0
 )
 
-// Options configures a Spring at construction. Zero-valued fields are
-// replaced with package defaults; pass explicit values for any field
-// whose default does not match the desired feel.
+// Options configures a Spring at construction. A zero Stiffness or
+// Mass is replaced with the package default; a zero Damping is derived
+// as critical damping from the resolved Stiffness and Mass. Pass
+// explicit values for any field whose default does not match the
+// desired feel.
 type Options struct {
 	// Stiffness is the spring constant k in the textbook damped-spring
 	// model m·ẍ = −k·x − c·ẋ. Higher values produce faster oscillation
@@ -88,7 +93,9 @@ type Options struct {
 
 	// Damping is the linear damping coefficient c. Critical damping
 	// (no overshoot, fastest settle without ringing) is c = 2·√(k·m).
-	// Below critical, the spring oscillates; above, it creeps.
+	// Below critical, the spring oscillates; above, it creeps. Zero
+	// derives critical damping from the resolved Stiffness and Mass,
+	// so leaving it unset never rings.
 	Damping float64
 
 	// Mass of the free particle (m). Higher mass adds inertia,
@@ -108,17 +115,19 @@ type Spring struct {
 }
 
 // New constructs a Spring whose value starts at start and is heading
-// toward target. Zero-valued option fields are replaced with package
-// defaults.
+// toward target. A zero Stiffness or Mass is replaced with the package
+// default; then a zero Damping is derived — from the resolved values,
+// so the derivation holds under partial overrides — as critical
+// damping 2·√(Stiffness·Mass).
 func New(start, target float64, opts Options) *Spring {
 	if opts.Stiffness == 0 {
 		opts.Stiffness = DefaultStiffness
 	}
-	if opts.Damping == 0 {
-		opts.Damping = DefaultDamping
-	}
 	if opts.Mass == 0 {
 		opts.Mass = DefaultMass
+	}
+	if opts.Damping == 0 {
+		opts.Damping = 2 * math.Sqrt(opts.Stiffness*opts.Mass)
 	}
 	ps := traer.NewParticleSystem(0, 0)
 	anchor := ps.NewParticle(1, target, 0, 0)
