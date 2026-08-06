@@ -50,7 +50,7 @@ var (
 // shaper is the canonical Roboto shaper, built once and cached inside
 // tokens.DefaultTypography; shaper construction dominates the per-test
 // wall time otherwise.
-var shaper = tokens.DefaultTypography.Shaper()
+var shaper = tokens.DefaultTypography.DeterministicShaper()
 
 // renderBtn returns a layout.Widget for a button rendered with the
 // given colour tokens and visual state. Sharp-cornered, empty-label —
