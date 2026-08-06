@@ -47,8 +47,25 @@ var (
 func scene(level tokens.ElevationLevel) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
 		paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
-		depth.Shadow(gtx, boundsRect, level)
+		depth.Shadow(gtx, boundsRect, level, 0, 1)
 		paint.FillShape(gtx.Ops, fgColor, clip.Rect(boundsRect).Op())
+		return layout.Dimensions{Size: gtx.Constraints.Max}
+	}
+}
+
+// roundedScene mirrors scene but rounds both the shadow and the
+// foreground to the same radius — the shape every organizational
+// caller draws. The wedge defect FX.3 fixed was the square interior
+// fill showing through the foreground's rounded corners; only a
+// golden catches it.
+func roundedScene(level tokens.ElevationLevel, radius int, opacity float32) layout.Widget {
+	return func(gtx layout.Context) layout.Dimensions {
+		paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
+		depth.Shadow(gtx, boundsRect, level, radius, opacity)
+		paint.FillShape(gtx.Ops, fgColor, clip.RRect{
+			Rect: boundsRect,
+			SE:   radius, SW: radius, NE: radius, NW: radius,
+		}.Op(gtx.Ops))
 		return layout.Dimensions{Size: gtx.Constraints.Max}
 	}
 }
@@ -195,6 +212,48 @@ func TestShadowGoldens(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			renderGolden(t, tc.name, canvasSize, scene(tc.level))
 		})
+	}
+}
+
+// TestShadowRoundedGolden exercises the FX.3 fix: a rounded surface
+// over a shadow rounded to the same radius. Before the fix the
+// interior fill was a hard clip.Rect, and this scene showed its
+// square corners through the foreground's rounding as four dark
+// wedges — the exact pixels this golden pins.
+func TestShadowRoundedGolden(t *testing.T) {
+	renderGolden(t, "level-3-rounded", canvasSize, roundedScene(tokens.Level3, 12, 1))
+}
+
+// TestShadowOpacity asserts the opacity parameter scales the ramp:
+// 0 paints nothing at all, and a half-strength shadow differs from a
+// full-strength one.
+func TestShadowOpacity(t *testing.T) {
+	bg := capture(t, canvasSize, func(gtx layout.Context) layout.Dimensions {
+		paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
+		return layout.Dimensions{Size: gtx.Constraints.Max}
+	})
+	if bg == nil {
+		return
+	}
+	shadowAt := func(opacity float32) *image.RGBA {
+		return capture(t, canvasSize, func(gtx layout.Context) layout.Dimensions {
+			paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
+			depth.Shadow(gtx, boundsRect, tokens.Level3, 12, opacity)
+			return layout.Dimensions{Size: gtx.Constraints.Max}
+		})
+	}
+	zero, half, full := shadowAt(0), shadowAt(0.5), shadowAt(1)
+	if zero == nil || half == nil || full == nil {
+		return
+	}
+	if n := pixelDiff(bg, zero); n != 0 {
+		t.Errorf("opacity 0 painted %d pixel(s); want a no-op", n)
+	}
+	if n := pixelDiff(half, full); n == 0 {
+		t.Errorf("opacity 0.5 renders identically to opacity 1; want a lighter shadow")
+	}
+	if n := pixelDiff(bg, half); n == 0 {
+		t.Errorf("opacity 0.5 painted nothing; want a visible shadow")
 	}
 }
 
