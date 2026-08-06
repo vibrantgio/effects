@@ -3,6 +3,7 @@ package tween_test
 import (
 	"image/color"
 	"math"
+	"strings"
 	"testing"
 
 	"github.com/vibrantgio/pulse/tween"
@@ -165,6 +166,47 @@ func TestTweenZeroFramesIsImmediate(t *testing.T) {
 	tw := tween.Tween[int]{From: 100, To: 200, Frames: 0, Lerp: lerpInt}
 	if got := tw.At(5); got != 100 {
 		t.Errorf("At(5) on zero-frame tween = %d, want From=100", got)
+	}
+}
+
+// TestTweenNilLerpEndpointsSurvive pins the endpoint contract: At never
+// touches Lerp for n <= 0 or n >= Frames, so a Lerp-less tween returns
+// the exact endpoints there. This is precisely the blind spot that let
+// the nil-Lerp defect hide behind endpoint-only tests.
+func TestTweenNilLerpEndpointsSurvive(t *testing.T) {
+	tw := tween.Tween[int]{From: 100, To: 200, Frames: 10}
+	for _, tc := range []struct {
+		n    int
+		want int
+	}{
+		{-1, 100}, {0, 100}, {10, 200}, {99, 200},
+	} {
+		if got := tw.At(tc.n); got != tc.want {
+			t.Errorf("nil-Lerp At(%d) = %d, want %d", tc.n, got, tc.want)
+		}
+	}
+}
+
+// TestTweenNilLerpInteriorPanics asserts the chosen contract for a
+// missing Lerp: the first interior frame panics with a message naming
+// the field, instead of an anonymous nil function call.
+func TestTweenNilLerpInteriorPanics(t *testing.T) {
+	for _, n := range []int{1, 5, 9} {
+		func() {
+			defer func() {
+				r := recover()
+				if r == nil {
+					t.Errorf("nil-Lerp At(%d) did not panic", n)
+					return
+				}
+				msg, ok := r.(string)
+				if !ok || !strings.Contains(msg, "Lerp") {
+					t.Errorf("nil-Lerp At(%d) panic = %v, want a message naming Lerp", n, r)
+				}
+			}()
+			tw := tween.Tween[int]{From: 100, To: 200, Frames: 10}
+			tw.At(n)
+		}()
 	}
 }
 

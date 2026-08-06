@@ -19,8 +19,9 @@
 // Lerp is not optional, and forgetting it does not fail where you would
 // notice. [Tween.At] returns From or To directly at the ends of the
 // range, so a Tween built without a Lerp survives At(0) and
-// At(Frames) — and panics with a nil function call on the first index
-// strictly between them. A test that only samples the endpoints passes.
+// At(Frames) — and panics on the first index strictly between them,
+// with a message naming the Lerp field. A test that only samples the
+// endpoints passes; sample the interior too.
 //
 // Frames must be positive. A zero Frames — the field is easy to leave
 // out of a composite literal — makes [Tween.At] return From at every
@@ -51,12 +52,21 @@ type Tween[T any] struct {
 
 // At returns the tweened value at frame n. n is clamped to [0, Frames]:
 // n <= 0 returns From; n >= Frames returns To.
+//
+// At panics if Lerp is nil and n is strictly inside the range — the
+// first frame that actually needs the interpolator. Tween has no
+// constructor to fail in (callers build composite literals), so this is
+// the earliest point the missing field can be reported by name rather
+// than as an anonymous nil function call.
 func (tw Tween[T]) At(n int) T {
 	if n <= 0 || tw.Frames <= 0 {
 		return tw.From
 	}
 	if n >= tw.Frames {
 		return tw.To
+	}
+	if tw.Lerp == nil {
+		panic("tween: Tween.Lerp is nil: set Lerp when constructing the Tween (e.g. tween.LerpFloat64 or tween.LerpNRGBA)")
 	}
 	return tw.Lerp(tw.From, tw.To, float64(n)/float64(tw.Frames))
 }
