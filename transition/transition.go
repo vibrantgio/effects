@@ -54,6 +54,8 @@ func LerpColorTokens(from, to tokens.ColorTokens, t float64) tokens.ColorTokens 
 			Secondary: lerpRamp(from.Ramps.Secondary, to.Ramps.Secondary, t),
 			Tertiary:  lerpRamp(from.Ramps.Tertiary, to.Ramps.Tertiary, t),
 			Error:     lerpRamp(from.Ramps.Error, to.Ramps.Error, t),
+			Success:   lerpRamp(from.Ramps.Success, to.Ramps.Success, t),
+			Warning:   lerpRamp(from.Ramps.Warning, to.Ramps.Warning, t),
 		},
 		Tertiary:    tween.LerpNRGBA(from.Tertiary, to.Tertiary, t),
 		OnTertiary:  tween.LerpNRGBA(from.OnTertiary, to.OnTertiary, t),
@@ -67,6 +69,10 @@ func LerpColorTokens(from, to tokens.ColorTokens, t float64) tokens.ColorTokens 
 		OnSecondary: tween.LerpNRGBA(from.OnSecondary, to.OnSecondary, t),
 		Error:       tween.LerpNRGBA(from.Error, to.Error, t),
 		OnError:     tween.LerpNRGBA(from.OnError, to.OnError, t),
+		Success:     tween.LerpNRGBA(from.Success, to.Success, t),
+		OnSuccess:   tween.LerpNRGBA(from.OnSuccess, to.OnSuccess, t),
+		Warning:     tween.LerpNRGBA(from.Warning, to.Warning, t),
+		OnWarning:   tween.LerpNRGBA(from.OnWarning, to.OnWarning, t),
 	}
 }
 
