@@ -47,10 +47,9 @@ The layering inversions that used to run through this module are cut. The
 prism↔pulse cycle is gone: prism's root module does not require pulse, and
 only its demo `gallery` — a nested module, exempt by ADR-001 — imports
 `springbutton`. And `transition`, which once lived in spectrum and dragged
-tier 1 up to tier 3, now lives here; the deprecated `spectrum/transition`
-alias shim still imports it, until F3.3 of the
-[org plan](https://github.com/vibrantgio/.github) (planned, not yet landed)
-deletes the shim.
+tier 1 up to tier 3, now lives here. The deprecated `spectrum/transition`
+alias shim that forwarded to it is gone as of spectrum v0.2.0, so this is
+the only path.
 
 ```sh
 go get github.com/vibrantgio/pulse
@@ -67,7 +66,7 @@ github.com/reactivego/rx v0.3.0 and Go 1.25.1.
 | `spring` | One scalar pulled toward a target by a damped spring, simulated as a two-particle `traer.ParticleSystem`. `SetTarget` retargets mid-flight without losing velocity; `Settled` says when to stop asking for frames. |
 | `motion` | `Enter`, `Exit` and `Transition`: a tween for opacity and a spring for scale, ticked together. `Apply` is the bridge to Gio — it lays a widget out once and replays it inside a scale-around-centre transform and an opacity layer, so the footprint never jitters. Defaults resolve from the token motion scale: `FramesAt` converts a duration stop at a frame rate, `SpringOptions` converts a `tokens.Spring` preset. |
 | `springbutton` | `prism/button` with a press that scales down and springs back, on the same props and the same visual contract. The one shipped variant. |
-| `transition` | Interpolates a whole `tokens.ColorTokens` set between two values, so a light-to-dark flip can cross-fade rather than snap. Moved here from spectrum in the G-B3 inversion; the deprecated `spectrum/transition` alias forwards here until F3.3 (planned) deletes it. |
+| `transition` | Interpolates a whole `tokens.ColorTokens` set between two values, so a light-to-dark flip can cross-fade rather than snap. Moved here from spectrum in the G-B3 inversion; the `spectrum/transition` alias that forwarded here is deleted as of spectrum v0.2.0. |
 | `blur` | The blur Gio does not have: a parallel three-pass box approximation of a Gaussian (`Gaussian`, `Blurrer`), `Cache` for static imagery blurred once and reused, and `Backdrop` — the "blurred behind the dialog" pipeline on `gioui.org/gpu/headless`, with `FallbackOp` and `Available` for the platforms where headless rendering is not. |
 | `depth` | A Material-style cast shadow under a rectangle, composed from eight linear gradients, with extent and offset read from a `tokens.ElevationLevel`. Opt-in vibrancy per ADR-005: a shadow marks what floats and can leave — a toast, a popover, a menu — never what is raised in place, which reads as raised by its surface step alone. The E2.2 caller audit is recorded in the package doc. |
 | `glow` | A luminance halo around a rectangle, composed from eight linear gradients standing in for the radial gradient Gio does not expose. The E4.4 verdict — why an animated glow is gradients, not blur — is recorded in the package doc, with the measurements. |
@@ -209,9 +208,10 @@ estimated.
 - **Three of the nine packages have no consumer anywhere in the
   organization.** `conductor`, `glow` and `motion` are imported by nothing
   outside their own tests — tested, golden-tested, working, and never wired
-  to a component. `transition` is imported only by the deprecated
-  `spectrum/transition` shim: nothing actually drives a theme cross-fade (see
-  spectrum's status). `depth`, `tween`, `blur` and `springbutton` are the
+  to a component. `transition` now has no importer at all: its one consumer
+  was the `spectrum/transition` shim, deleted in spectrum v0.2.0, and
+  nothing actually drives a theme cross-fade (see spectrum's status).
+  `depth`, `tween`, `blur` and `springbutton` are the
   ones really in use, and `spring` is used through `motion` and
   `springbutton`.
 - **`springbutton` is the only variant that exists.** The design calls for a
@@ -265,13 +265,6 @@ estimated.
   free. But `springbutton` does not subscribe `Motion`, so its press spring
   still runs at full amplitude under reduced motion; a spring consumer must
   read the zero durations as the snap signal itself.
-- **`springbutton` sizes, but does not style, its label from the theme.**
-  With no `Shaper` in its props it shapes with the theme's cached Typography
-  shaper (`Props.Shaper` is an explicit override only). But it renders
-  through `prism/button.Render`, which applies only the LabelLarge *size* —
-  typeface, weight and line height stay at the shaper's defaults. That is the
-  frozen static-`Render` seam; the planned major (F3.3) re-cuts those
-  signatures to `TextStyle` + `Density`.
 
 ## License
 

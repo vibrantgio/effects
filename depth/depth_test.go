@@ -195,7 +195,8 @@ func loadImage(path string) (*image.RGBA, error) {
 // ---- tests ----
 
 // TestShadowGoldens exercises the G3.3b Measurable: golden-image tests
-// at all six elevation levels (level-0 through level-5).
+// at every elevation level (level-0 through level-3 — the desktop ladder
+// tops out at 3 since spectrum v0.2.0 dropped levels 4 and 5).
 func TestShadowGoldens(t *testing.T) {
 	cases := []struct {
 		name  string
@@ -205,8 +206,6 @@ func TestShadowGoldens(t *testing.T) {
 		{"level-1", tokens.Level1},
 		{"level-2", tokens.Level2},
 		{"level-3", tokens.Level3},
-		{"level-4", tokens.Level4},
-		{"level-5", tokens.Level5},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -260,12 +259,11 @@ func TestShadowOpacity(t *testing.T) {
 // TestShadowAdjacentLevelsDiffer asserts that each adjacent pair of
 // elevation levels produces a visibly different render. Catches
 // regressions where the level-to-geometry mapping silently rounds
-// adjacent levels into the same offset/extent — which would let "six
+// adjacent levels into the same offset/extent — which would let "four
 // different" goldens drift toward the same byte sequence over time.
 func TestShadowAdjacentLevelsDiffer(t *testing.T) {
 	levels := []tokens.ElevationLevel{
-		tokens.Level0, tokens.Level1, tokens.Level2,
-		tokens.Level3, tokens.Level4, tokens.Level5,
+		tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
 	}
 	imgs := make([]*image.RGBA, len(levels))
 	for i, l := range levels {

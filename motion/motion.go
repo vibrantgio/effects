@@ -30,7 +30,7 @@
 // component animates and the dependency runs pulse → prism and never
 // back. [Apply] is the mechanism: wrap a prism render function with it.
 //
-//	bw := button.Render(shaper, label, colors, sp, rad, ts, btnState)
+//	bw := button.Render(shaper, label, colors, sp, rad, labelStyle, density, btnState)
 //	motion.Apply(gtx, primitive.State(), bw)
 //
 // This package ships only the primitives. The one variant that exists

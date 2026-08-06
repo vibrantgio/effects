@@ -208,10 +208,6 @@ func dpFor(level tokens.ElevationLevel) float32 {
 		return tokens.Elevation.Level2
 	case tokens.Level3:
 		return tokens.Elevation.Level3
-	case tokens.Level4:
-		return tokens.Elevation.Level4
-	case tokens.Level5:
-		return tokens.Elevation.Level5
 	}
 	return 0
 }

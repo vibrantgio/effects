@@ -22,8 +22,8 @@
 //
 // This package lived at github.com/vibrantgio/spectrum/transition; it
 // moved here because it is animation code — a foundation module should
-// not depend on the effects layer. A deprecated alias at the old path
-// keeps existing imports working for one release cycle.
+// not depend on the effects layer. The deprecated alias left behind at
+// the old path is gone as of spectrum v0.2.0; this is the only path.
 package transition
 
 import (
@@ -42,9 +42,10 @@ func lerpRamp(from, to tokens.Ramp, t float64) tokens.Ramp {
 }
 
 // LerpColorTokens interpolates each colour field of two
-// [tokens.ColorTokens] using [tween.LerpNRGBA] — the functional ramps and
-// pinned bases as well as the deprecated MD3-named alias fields, so the
-// result at t=0 and t=1 equals the endpoints exactly.
+// [tokens.ColorTokens] using [tween.LerpNRGBA] — every ramp and every
+// pinned base, so the result at t=0 and t=1 equals the endpoints exactly.
+// The five MD3-named alias fields it also carried are gone with spectrum
+// v0.2.0.
 func LerpColorTokens(from, to tokens.ColorTokens, t float64) tokens.ColorTokens {
 	return tokens.ColorTokens{
 		Ramps: tokens.RampSet{
@@ -54,23 +55,18 @@ func LerpColorTokens(from, to tokens.ColorTokens, t float64) tokens.ColorTokens 
 			Tertiary:  lerpRamp(from.Ramps.Tertiary, to.Ramps.Tertiary, t),
 			Error:     lerpRamp(from.Ramps.Error, to.Ramps.Error, t),
 		},
-		Tertiary:         tween.LerpNRGBA(from.Tertiary, to.Tertiary, t),
-		OnTertiary:       tween.LerpNRGBA(from.OnTertiary, to.OnTertiary, t),
-		Text:             tween.LerpNRGBA(from.Text, to.Text, t),
-		Divider:          tween.LerpNRGBA(from.Divider, to.Divider, t),
-		Background:       tween.LerpNRGBA(from.Background, to.Background, t),
-		OnBackground:     tween.LerpNRGBA(from.OnBackground, to.OnBackground, t),
-		Surface:          tween.LerpNRGBA(from.Surface, to.Surface, t),
-		OnSurface:        tween.LerpNRGBA(from.OnSurface, to.OnSurface, t),
-		SurfaceVariant:   tween.LerpNRGBA(from.SurfaceVariant, to.SurfaceVariant, t),
-		OnSurfaceVariant: tween.LerpNRGBA(from.OnSurfaceVariant, to.OnSurfaceVariant, t),
-		Primary:          tween.LerpNRGBA(from.Primary, to.Primary, t),
-		OnPrimary:        tween.LerpNRGBA(from.OnPrimary, to.OnPrimary, t),
-		Secondary:        tween.LerpNRGBA(from.Secondary, to.Secondary, t),
-		OnSecondary:      tween.LerpNRGBA(from.OnSecondary, to.OnSecondary, t),
-		Error:            tween.LerpNRGBA(from.Error, to.Error, t),
-		OnError:          tween.LerpNRGBA(from.OnError, to.OnError, t),
-		Outline:          tween.LerpNRGBA(from.Outline, to.Outline, t),
+		Tertiary:    tween.LerpNRGBA(from.Tertiary, to.Tertiary, t),
+		OnTertiary:  tween.LerpNRGBA(from.OnTertiary, to.OnTertiary, t),
+		Text:        tween.LerpNRGBA(from.Text, to.Text, t),
+		Divider:     tween.LerpNRGBA(from.Divider, to.Divider, t),
+		Background:  tween.LerpNRGBA(from.Background, to.Background, t),
+		Surface:     tween.LerpNRGBA(from.Surface, to.Surface, t),
+		Primary:     tween.LerpNRGBA(from.Primary, to.Primary, t),
+		OnPrimary:   tween.LerpNRGBA(from.OnPrimary, to.OnPrimary, t),
+		Secondary:   tween.LerpNRGBA(from.Secondary, to.Secondary, t),
+		OnSecondary: tween.LerpNRGBA(from.OnSecondary, to.OnSecondary, t),
+		Error:       tween.LerpNRGBA(from.Error, to.Error, t),
+		OnError:     tween.LerpNRGBA(from.OnError, to.OnError, t),
 	}
 }
 

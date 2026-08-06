@@ -57,7 +57,7 @@ var shaper = tokens.DefaultTypography.Shaper()
 // motion-applied output stays bit-stable across GPU contexts.
 func renderBtn(colors tokens.ColorTokens, s button.RenderState) layout.Widget {
 	sharp := tokens.RadiusScale{}
-	return button.Render(shaper, "", colors, tokens.Spacing, sharp, tokens.DefaultTypeScale, s)
+	return button.Render(shaper, "", colors, tokens.Spacing, sharp, tokens.DefaultTypography.LabelLarge, tokens.Comfortable, s)
 }
 
 // scene composes a light backdrop and a motion-transformed button on

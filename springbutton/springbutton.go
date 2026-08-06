@@ -51,12 +51,13 @@
 // # Fonts
 //
 // The label is shaped with the theme's cached shaper
-// (Typography.Shaper(), ADR-003: the theme owns the typeface), sized by
-// the LabelLarge role. Props.Shaper is an explicit per-instance
-// override only; leave it nil in normal use. Because rendering goes
-// through [github.com/vibrantgio/prism/button.Render] — which applies
-// only the role's size, not its typeface, weight or line height — the
-// glyphs come out at the shaper's default face and weight.
+// (Typography.Shaper(), ADR-003: the theme owns the typeface) in the
+// LabelLarge role. Props.Shaper is an explicit per-instance override
+// only; leave it nil in normal use. Since prism v0.2.0 the role's whole
+// text style — typeface, weight, size and line height — reaches
+// [github.com/vibrantgio/prism/button.Render], as does the theme's
+// Density, so a spring button is glyph- and pixel-identical to the
+// static one at scale 1.
 //
 // # State scope
 //
@@ -157,14 +158,15 @@ func SpringButton(
 	// replacing the former Theme.Type source.
 	resolved := rx.SwitchMap(th, func(t theme.Theme) rx.Observable[resolvedTokens] {
 		return rx.Map(
-			rx.CombineLatest4(t.Color, t.Typography, t.Spacing, t.Radius),
-			func(n rx.Tuple4[tokens.ColorTokens, tokens.Typography, tokens.SpacingScale, tokens.RadiusScale]) resolvedTokens {
+			rx.CombineLatest5(t.Color, t.Typography, t.Spacing, t.Radius, t.Density),
+			func(n rx.Tuple5[tokens.ColorTokens, tokens.Typography, tokens.SpacingScale, tokens.RadiusScale, tokens.Density]) resolvedTokens {
 				typ := n.Second
 				return resolvedTokens{
 					color:   n.First,
 					label:   typ.LabelLarge,
 					spacing: n.Third,
 					radius:  n.Fourth,
+					density: n.Fifth,
 					shaper:  typ.Shaper(),
 				}
 			},
@@ -234,14 +236,14 @@ func SpringButton(
 					}
 
 					macro := op.Record(gtx.Ops)
-					// Render reads only the LabelLarge size from its
-					// TypeScale parameter; supply it from the Typography
-					// role so the label sizes like the static button.
+					// Render takes the LabelLarge role's whole text style
+					// and the theme's density, so the spring button shapes
+					// and sizes exactly like the static one.
 					innerDims := button.Render(
 						shaper,
 						props.Label,
 						tok.color, tok.spacing, tok.radius,
-						tokens.TypeScale{LabelLarge: tok.label.Size},
+						tok.label, tok.density,
 						renderState,
 					)(gtx)
 					call := macro.Stop()
@@ -267,11 +269,12 @@ func SpringButton(
 // resolvedTokens mirrors the per-emission token snapshot that
 // prism/button keeps unexported. Spring composition operates in the
 // same token space as the static button so the visual contract matches
-// at scale = 1 (up to Render's size-only use of the label style).
+// at scale = 1.
 type resolvedTokens struct {
 	color   tokens.ColorTokens
-	label   tokens.TextStyle // the LabelLarge role: only Size reaches Render
+	label   tokens.TextStyle // the LabelLarge role: typeface, weight, size, line height
 	spacing tokens.SpacingScale
 	radius  tokens.RadiusScale
-	shaper  *text.Shaper // the theme's cached shaper
+	density tokens.Density // control height and inner padding
+	shaper  *text.Shaper   // the theme's cached shaper
 }
