@@ -13,6 +13,12 @@
 # F5.4 made the test step verbose and added the golden-image report after it.
 # This repository stores golden PNGs, and until F5.4 nothing here could say
 # whether CI ever compared them; see the report step for why.
+#
+# F5.7 answered it — they never have — and then measured what installing the
+# missing drivers would cost, on this repository, because it has the smallest
+# golden set in the organization. The answer is above the build step, and it
+# is the reason there is still no driver package in the apt line: this job is
+# a build-and-test gate, deliberately, and not a pixel gate.
 name: CI
 on:
   push:
@@ -34,44 +40,44 @@ jobs:
             libx11-xcb-dev libxkbcommon-x11-dev libgles2-mesa-dev \
             libegl1-mesa-dev libffi-dev libxcursor-dev libvulkan-dev
 
-      # F5.7 experiment, pulse only. Everything above is headers: -dev
-      # packages let cgo compile against EGL, GLES and Vulkan, and none of
-      # them puts an implementation on the runner. So headless.NewWindow has
-      # nothing to open, every golden test skips, and F5.4's report has said
-      # so on every run.
+      # Everything above is headers. A -dev package lets cgo compile against
+      # EGL, GLES and Vulkan and puts no implementation on the runner, so
+      # headless.NewWindow has nothing to open and every golden test skips —
+      # which is what F5.4's report step below has said on every run.
       #
-      # These are the runtime halves, taken from gio's own Linux CI manifest
-      # (.builds/linux.yml in the gioui.org module), which installs exactly
-      # them so that its own headless tests run: an EGL loader and the mesa
-      # EGL/GLX drivers behind it, the DRI drivers that carry llvmpipe for a
-      # runner with no GPU, and lavapipe for the Vulkan context gio prefers.
+      # F5.7 ran the obvious experiment here, on this repository, and the
+      # result is why no driver package follows. Adding gio's own runtime list
+      # from .builds/linux.yml in the gioui.org module —
       #
-      # Filtered against the archive rather than installed outright, because
-      # the list spans releases: mesa-libgallium is a split-out of
-      # libgl1-mesa-dri that exists from Ubuntu 24.10, and naming a package
-      # ubuntu-latest has never heard of would fail this step and measure
-      # nothing. A missing name is reported and stepped over.
+      #     libegl1 libegl-mesa0 libglx-mesa0 libgl1-mesa-dri
+      #     mesa-libgallium libgbm1 mesa-vulkan-drivers
       #
-      # pulse alone carries this until the experiment reports. Twenty-one
-      # goldens is the smallest golden set in the organization and three of
-      # them are CPU-rendered, so they compare today and pin the harness
-      # itself; whether the other eighteen *match* a Linux renderer is the
-      # open question, and the answer decides for prism, cadence and markdown
-      # without risking 185 images at once.
-      - name: Install the GL drivers the headers do not carry (F5.7)
-        run: |
-          want="libegl1 libegl-mesa0 libglx-mesa0 libgl1-mesa-dri mesa-libgallium libgbm1 mesa-vulkan-drivers"
-          have=""
-          for p in $want; do
-            if apt-cache show "$p" >/dev/null 2>&1; then
-              have="$have $p"
-            else
-              echo "::notice::F5.7: no such package on this runner, stepping over it: $p"
-            fi
-          done
-          echo "installing:$have"
-          sudo apt-get install -y $have
-
+      # — works exactly as advertised: the verdict flipped from SKIPPED to
+      # COMPARED on the next run, on an ordinary ubuntu-latest with no GPU, no
+      # Xvfb and no LIBGL_ALWAYS_SOFTWARE. Every one of the seven packages was
+      # in the archive.
+      #
+      # And then nine of pulse's twenty-one goldens failed. 12782 pixels apart
+      # in total, ~3% of all stored pixels, spread as eight small differences
+      # of 0.3–4% of a frame — antialiased edges and blur falloff, which is
+      # exactly what a different rasteriser gets slightly differently — plus
+      # motion/swap-mid at 9220 pixels, 36% of its frame, where a cross-fade's
+      # blend diverges over a large area rather than at its edges. Twelve
+      # matched exactly, including pulse/transition's three CPU-drawn frames,
+      # which is the control: the harness, the PNG encoding and the comparison
+      # are all fine. It is the GPU rasterisation that differs.
+      #
+      # Every golden in this organization was generated on macOS. Turning the
+      # comparison on therefore does not make CI honest about the images, it
+      # makes CI assert that Linux mesa and Metal agree, which they do not and
+      # need not — and golden determinism must not be allowed to constrain
+      # what the system may actually draw. So the drivers stay out, this is a
+      # build-and-test gate and not a pixel gate, and AGENTS.md says so in as
+      # many words rather than leaving a green tick to imply otherwise.
+      #
+      # Anyone reversing this: add the list above back as one apt step. The
+      # report step below already counts and publishes the mismatches, so the
+      # measurement repeats itself without further work.
       - run: go build ./...
 
       # -v and the tee are load-bearing, not noise. Every golden harness in
@@ -102,14 +108,11 @@ jobs:
       # returns them to an unauthenticated caller. That is what makes this
       # question answerable from a clone, with curl, by whoever asks next.
       #
-      # It reports; it does not gate. Turning the skip into a failure is a
-      # separate decision and belongs with its fix: gio's own Linux CI
-      # (.builds/linux.yml in the gioui.org module) installs the runtime
-      # drivers this workflow does not — libegl-mesa0, libglx-mesa0,
-      # libgl1-mesa-dri, mesa-libgallium, libgbm1, libegl1 and
-      # mesa-vulkan-drivers. Without them there is no EGL display to
-      # initialise and no Vulkan ICD for gio's fallback context to find, and
-      # the -dev packages installed above supply headers, not drivers.
+      # It reports; it does not gate — and F5.7 established that it should not.
+      # The drivers that would make it a gate are named above the build step,
+      # together with what happened when they were installed here. This step
+      # now measures three things rather than one: whether the images ran, why
+      # not when they did not, and how far apart they were when they did.
       - name: Were the golden images compared, or skipped? (F5.4)
         if: always()
         run: |
@@ -138,7 +141,8 @@ jobs:
           # Vulkan loader with no ICD all read identically. Distinct reasons
           # only, so the annotation stays one line however many tests skipped.
           if [ "$headless" -gt 0 ]; then
-            reasons=$(grep -oE 'headless rendering not supported: .*' "$log" | sort -u | paste -sd' | ' -)
+            reasons=$(grep -oE 'headless rendering not supported: .*' "$log" | sort -u |
+              awk '{ printf "%s%s", sep, $0; sep = " | " } END { if (NR) print "" }')
             echo "::warning::golden images skipped because: $reasons"
             echo "$reasons"
           fi
@@ -167,7 +171,9 @@ jobs:
             # lines, but a summary is not reachable without a token and an
             # annotation is — which is the whole reason F5.4 chose this
             # channel.
-            per=$(grep -oE 'golden: "[^"]+": [^(]*' "$log" | sed 's/golden: //; s/[[:space:]]*$//' | sort -u | paste -sd'; ' -)
+            per=$(grep -oE 'golden: "[^"]+": .*' "$log" |
+              sed 's/^golden: //; s/ (actual saved to [^)]*)$//' | sort -u |
+              awk '{ printf "%s%s", sep, $0; sep = "; " } END { if (NR) print "" }')
             echo "::warning::which ones: $per"
             echo "$per"
           else
