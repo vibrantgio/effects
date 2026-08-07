@@ -80,10 +80,20 @@ jobs:
       # test passes — so "CI is green" claimed nothing at all about the
       # stored PNGs. Plain `go test` never prints a skip, which is why no
       # earlier run could be asked either.
+      #
+      # -count=1 is load-bearing too, and F5.7 found out the hard way.
+      # actions/setup-go caches ~/.cache/go-build keyed on go.sum, so the Go
+      # test cache survives from run to run — and go test replays a cached
+      # run's *output*, skip lines and all. The first push of the drivers
+      # below changed no Go file and no go.sum, so every package hit that
+      # cache: the whole test step took one second instead of fourteen and
+      # faithfully reprinted 36 skips recorded by a runner that had no
+      # drivers. A CI test step that can replay an answer from before the
+      # machine changed is not measuring the machine.
       - name: Test
         run: |
           set -o pipefail
-          go test -v ./... 2>&1 | tee "$RUNNER_TEMP/test.log"
+          go test -count=1 -v ./... 2>&1 | tee "$RUNNER_TEMP/test.log"
 
       # The verdict is emitted as a workflow annotation and not only as log
       # text, because the two are not equally reachable: downloading a run
@@ -119,6 +129,19 @@ jobs:
             echo "::notice::$verdict"
           fi
           echo "$verdict"
+
+          # F5.7: and *why* it could not open one. The harness formats the
+          # error from headless.NewWindow into its skip message, so the reason
+          # is already in the log — which is exactly the place a reader
+          # without admin rights cannot look. Without it "SKIPPED" is a dead
+          # end: a missing EGL implementation, a missing DRI device and a
+          # Vulkan loader with no ICD all read identically. Distinct reasons
+          # only, so the annotation stays one line however many tests skipped.
+          if [ "$headless" -gt 0 ]; then
+            reasons=$(grep -oE 'headless rendering not supported: .*' "$log" | sort -u | paste -sd' | ' -)
+            echo "::warning::golden images skipped because: $reasons"
+            echo "$reasons"
+          fi
 
           # F5.7: by how much. "The images ran" and "the images match" are
           # different answers, and only the second one lets CI gate on them —
