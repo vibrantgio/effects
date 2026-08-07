@@ -33,6 +33,45 @@ jobs:
           sudo apt-get install -y gcc pkg-config libwayland-dev libx11-dev \
             libx11-xcb-dev libxkbcommon-x11-dev libgles2-mesa-dev \
             libegl1-mesa-dev libffi-dev libxcursor-dev libvulkan-dev
+
+      # F5.7 experiment, pulse only. Everything above is headers: -dev
+      # packages let cgo compile against EGL, GLES and Vulkan, and none of
+      # them puts an implementation on the runner. So headless.NewWindow has
+      # nothing to open, every golden test skips, and F5.4's report has said
+      # so on every run.
+      #
+      # These are the runtime halves, taken from gio's own Linux CI manifest
+      # (.builds/linux.yml in the gioui.org module), which installs exactly
+      # them so that its own headless tests run: an EGL loader and the mesa
+      # EGL/GLX drivers behind it, the DRI drivers that carry llvmpipe for a
+      # runner with no GPU, and lavapipe for the Vulkan context gio prefers.
+      #
+      # Filtered against the archive rather than installed outright, because
+      # the list spans releases: mesa-libgallium is a split-out of
+      # libgl1-mesa-dri that exists from Ubuntu 24.10, and naming a package
+      # ubuntu-latest has never heard of would fail this step and measure
+      # nothing. A missing name is reported and stepped over.
+      #
+      # pulse alone carries this until the experiment reports. Twenty-one
+      # goldens is the smallest golden set in the organization and three of
+      # them are CPU-rendered, so they compare today and pin the harness
+      # itself; whether the other eighteen *match* a Linux renderer is the
+      # open question, and the answer decides for prism, cadence and markdown
+      # without risking 185 images at once.
+      - name: Install the GL drivers the headers do not carry (F5.7)
+        run: |
+          want="libegl1 libegl-mesa0 libglx-mesa0 libgl1-mesa-dri mesa-libgallium libgbm1 mesa-vulkan-drivers"
+          have=""
+          for p in $want; do
+            if apt-cache show "$p" >/dev/null 2>&1; then
+              have="$have $p"
+            else
+              echo "::notice::F5.7: no such package on this runner, stepping over it: $p"
+            fi
+          done
+          echo "installing:$have"
+          sudo apt-get install -y $have
+
       - run: go build ./...
 
       # -v and the tee are load-bearing, not noise. Every golden harness in
@@ -80,16 +119,43 @@ jobs:
             echo "::notice::$verdict"
           fi
           echo "$verdict"
+
+          # F5.7: by how much. "The images ran" and "the images match" are
+          # different answers, and only the second one lets CI gate on them —
+          # every stored PNG in this organization was generated on macOS, so a
+          # Linux GL stack rendering them one pixel differently would turn a
+          # newly-honest gate into four red repositories. The counts that
+          # settle it are in the run log, and a run log needs admin rights on
+          # the repository, so they are summed here and published the way the
+          # verdict above is: as an annotation, which needs no token at all.
+          differed=$(grep -cE 'pixel\(s\) differ' "$log" || true)
+          resized=$(grep -c 'size changed: golden is' "$log" || true)
+          worst=$(grep -oE '[0-9]+ pixel\(s\) differ' "$log" | awk '$1 > m { m = $1 } END { print m + 0 }')
+          sum=$(grep -oE '[0-9]+ pixel\(s\) differ' "$log" | awk '{ s += $1 } END { print s + 0 }')
+          if [ "$((differed + resized))" -gt 0 ]; then
+            delta="golden images MISMATCHED: $differed by pixel value and $resized by size; $sum pixel(s) differ across them, worst single image $worst"
+            echo "::warning::$delta"
+          else
+            delta="golden images: no stored PNG mismatched"
+          fi
+          echo "$delta"
+
           {
-            echo "### Golden images (F5.4)"
+            echo "### Golden images (F5.4, F5.7)"
             echo
             echo "$verdict"
+            echo
+            echo "$delta"
             echo
             echo "| count | |"
             echo "|------:|-|"
             echo "| $headless | skips for want of a headless window |"
             echo "| $skipped | skipped tests, all causes |"
             echo "| $passed | passing tests |"
+            echo "| $differed | goldens differing by pixel value |"
+            echo "| $resized | goldens differing by size |"
+            echo
+            grep -E 'golden: "' "$log" || true
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Layer check (ADR-001)
