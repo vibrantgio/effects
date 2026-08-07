@@ -20,6 +20,7 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 
+	"github.com/vibrantgio/prism/golden"
 	"github.com/vibrantgio/pulse/blur"
 	glow "github.com/vibrantgio/pulse/glow"
 )
@@ -135,17 +136,11 @@ func cornerProfile(img *image.RGBA, bounds image.Rectangle, n int) []float64 {
 func TestBlurGlowFalloffComparison(t *testing.T) {
 	opts := glow.Options{Color: haloColor, Radius: haloRadius, Intensity: 1}
 
-	gradImg := capture(t, canvasSize, scene(haloBounds, opts))
-	if gradImg == nil {
-		return
-	}
+	gradImg := golden.Capture(t, canvasSize, scene(haloBounds, opts))
 	buf := image.NewNRGBA(image.Rectangle{Max: canvasSize})
 	var blurrer blur.Blurrer
 	imgOp := blurHalo(buf, haloBounds, opts, &blurrer)
-	blurImg := capture(t, canvasSize, blurScene(imgOp, haloBounds))
-	if blurImg == nil {
-		return
-	}
+	blurImg := golden.Capture(t, canvasSize, blurScene(imgOp, haloBounds))
 
 	const n = haloRadius + 5
 	gradEdge := edgeProfile(gradImg, haloBounds, n)
@@ -206,11 +201,8 @@ func dumpComparison(t *testing.T, gradImg, blurImg *image.RGBA) {
 		t.Fatalf("mkdir %s: %v", *blurglowDump, err)
 	}
 	save := func(name string, img *image.RGBA) {
-		if img == nil {
-			return
-		}
 		path := filepath.Join(*blurglowDump, name)
-		if err := saveImage(path, img); err != nil {
+		if err := golden.Save(path, img); err != nil {
 			t.Fatalf("save %s: %v", path, err)
 		}
 	}
@@ -220,10 +212,10 @@ func dumpComparison(t *testing.T, gradImg, blurImg *image.RGBA) {
 	big := image.Pt(3*canvasW, 3*canvasH)
 	bigBounds := image.Rect(3*boundsX0, 3*boundsY0, 3*boundsX1, 3*boundsY1)
 	bigOpts := glow.Options{Color: haloColor, Radius: 3 * haloRadius, Intensity: 1}
-	save("gradient-halo-3x.png", capture(t, big, scene(bigBounds, bigOpts)))
+	save("gradient-halo-3x.png", golden.Capture(t, big, scene(bigBounds, bigOpts)))
 	buf := image.NewNRGBA(image.Rectangle{Max: big})
 	var blurrer blur.Blurrer
-	save("blur-halo-3x.png", capture(t, big, blurScene(blurHalo(buf, bigBounds, bigOpts, &blurrer), bigBounds)))
+	save("blur-halo-3x.png", golden.Capture(t, big, blurScene(blurHalo(buf, bigBounds, bigOpts, &blurrer), bigBounds)))
 }
 
 // ---- cost benchmarks ----

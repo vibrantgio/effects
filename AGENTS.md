@@ -29,12 +29,24 @@ root.
 
     go build ./... && go test ./...
 
-**Golden images.** Tests in three packages compare rendered output against
-PNGs committed under `testdata/golden/`. When a change legitimately moves
-pixels, regenerate them within the same change, look at what came out, and
-say so in the commit. From the repository root:
+**Golden images.** Tests in four packages compare rendered output against
+PNGs committed under `testdata/golden/`. They compare through
+`github.com/vibrantgio/prism/golden`, which declares `-golden.update` and is
+shared with cadence, markdown and the workbench apps; F5.5 deleted the four
+inlined copies that used to live here. Do not add a fifth, and do not declare
+a second `-golden.update`: two registrations of one flag name in a test
+binary panic at init.
 
-    go test ./depth ./glow ./motion -golden.update
+`transition` is the odd one: its swatches are drawn on the CPU with
+`image/draw` — colour interpolation, no widget rendering — so it calls
+`golden.CompareNRGBA` on an image it built itself rather than
+`golden.Render`, and needs no headless window at all.
+
+When a change legitimately moves pixels, regenerate them within the same
+change, look at what came out, and say so in the commit. From the repository
+root:
+
+    go test ./depth ./glow ./motion ./transition -golden.update
 
 Both halves of that line matter. `go test` cannot tell that an unfamiliar
 flag is boolean, so a flag placed before the packages swallows them: `go

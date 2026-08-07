@@ -1,17 +1,10 @@
 package motion_test
 
 import (
-	"flag"
-	"fmt"
 	"image"
 	"image/color"
-	"image/png"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 
-	"gioui.org/gpu/headless"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
@@ -19,15 +12,10 @@ import (
 	"gioui.org/unit"
 
 	"github.com/vibrantgio/prism/button"
+	"github.com/vibrantgio/prism/golden"
 	motion "github.com/vibrantgio/pulse/motion"
 	"github.com/vibrantgio/spectrum/tokens"
 )
-
-// goldenUpdate, when set, overwrites stored goldens with the live
-// render output. Mirrors the harness in pulse/glow and pulse/depth;
-// inlined here because prism/internal/golden lives in a separate
-// module tree and is not importable from pulse.
-var goldenUpdate = flag.Bool("golden.update", false, "overwrite golden images with current output")
 
 // ---- fixture geometry & colours ----
 
@@ -92,147 +80,6 @@ func bgOnly(gtx layout.Context) layout.Dimensions {
 	return layout.Dimensions{Size: gtx.Constraints.Max}
 }
 
-// ---- golden harness (inlined) ----
-
-func capture(t *testing.T, size image.Point, draw layout.Widget) *image.RGBA {
-	t.Helper()
-	w, err := headless.NewWindow(size.X, size.Y)
-	if err != nil {
-		t.Skipf("headless rendering not supported: %v", err)
-		return nil
-	}
-	defer w.Release()
-
-	var ops op.Ops
-	gtx := layout.Context{
-		Constraints: layout.Exact(size),
-		Metric:      unit.Metric{PxPerDp: 1, PxPerSp: 1},
-		Ops:         &ops,
-	}
-	draw(gtx)
-	if err := w.Frame(&ops); err != nil {
-		t.Fatalf("Frame: %v", err)
-	}
-	img := image.NewRGBA(image.Rectangle{Max: size})
-	if err := w.Screenshot(img); err != nil {
-		t.Fatalf("Screenshot: %v", err)
-	}
-	return img
-}
-
-func renderGolden(t *testing.T, name string, size image.Point, draw layout.Widget) {
-	t.Helper()
-	img := capture(t, size, draw)
-	if img == nil {
-		return
-	}
-	path := filepath.Join("testdata", "golden", name+".png")
-
-	if *goldenUpdate {
-		if err := saveImage(path, img); err != nil {
-			t.Fatalf("save %s: %v", path, err)
-		}
-		return
-	}
-
-	stored, err := loadImage(path)
-	if os.IsNotExist(err) {
-		t.Fatalf("%s not found; run go test -golden.update to create", path)
-		return
-	}
-	if err != nil {
-		t.Fatalf("load %s: %v", path, err)
-		return
-	}
-	// A size change is a failure in its own right, and it has to be caught
-	// here: once the bounds differ there is no pixel count to compare, and
-	// pixelDiff refuses to invent one.
-	if sb, ib := stored.Bounds(), img.Bounds(); sb != ib {
-		actualPath := strings.TrimSuffix(path, ".png") + ".actual.png"
-		_ = saveImage(actualPath, img)
-		t.Fatalf("%q: size changed: golden is %dx%d, render is %dx%d (actual saved to %s)",
-			name, sb.Dx(), sb.Dy(), ib.Dx(), ib.Dy(), actualPath)
-	}
-	if n := pixelDiff(stored, img); n > 0 {
-		actualPath := strings.TrimSuffix(path, ".png") + ".actual.png"
-		_ = saveImage(actualPath, img)
-		t.Fatalf("%q: %d pixel(s) differ (actual saved to %s)", name, n, actualPath)
-	}
-}
-
-// pixelDiff counts the pixels that differ between a and b, which must have equal
-// bounds. It panics if they do not.
-//
-// The panic replaces a returned -1. There is no pixel count to report for two
-// images of different shapes, and -1 read as "no difference" to every `n > 0`
-// test — which is how a golden whose size had moved compared as a pass, here
-// and across the whole organization. A caller for which a size change is a
-// real outcome rather than a defect — the stored-golden comparison, and only
-// it — must compare Bounds itself before calling.
-func pixelDiff(a, b *image.RGBA) int {
-	if a.Bounds() != b.Bounds() {
-		panic(fmt.Sprintf("pixelDiff: images must have equal bounds, got %v and %v",
-			a.Bounds(), b.Bounds()))
-	}
-	bounds := a.Bounds()
-	n := 0
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			off := (y-bounds.Min.Y)*a.Stride + (x-bounds.Min.X)*4
-			if a.Pix[off] != b.Pix[off] ||
-				a.Pix[off+1] != b.Pix[off+1] ||
-				a.Pix[off+2] != b.Pix[off+2] ||
-				a.Pix[off+3] != b.Pix[off+3] {
-				n++
-			}
-		}
-	}
-	return n
-}
-
-func saveImage(path string, img *image.RGBA) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return err
-	}
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	// headless.Screenshot writes straight-alpha into *image.RGBA;
-	// reinterpret as NRGBA so png.Encode stores the bytes verbatim
-	// instead of premultiplying edge alpha.
-	nrgba := &image.NRGBA{Pix: img.Pix, Stride: img.Stride, Rect: img.Rect}
-	return png.Encode(f, nrgba)
-}
-
-func loadImage(path string) (*image.RGBA, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-	decoded, err := png.Decode(f)
-	if err != nil {
-		return nil, err
-	}
-	switch v := decoded.(type) {
-	case *image.RGBA:
-		return v, nil
-	case *image.NRGBA:
-		return &image.RGBA{Pix: v.Pix, Stride: v.Stride, Rect: v.Rect}, nil
-	default:
-		bounds := decoded.Bounds()
-		rgba := image.NewRGBA(bounds)
-		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-			for x := bounds.Min.X; x < bounds.Max.X; x++ {
-				rgba.Set(x, y, decoded.At(x, y))
-			}
-		}
-		return rgba, nil
-	}
-}
-
 // ---- frame schedules ----
 
 // runEnter ticks an Enter primitive ticks times and returns its state.
@@ -281,7 +128,7 @@ func TestEnterGoldens(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			s := runEnter(opts, tc.ticks)
-			renderGolden(t, tc.name, canvasSize, scene(s, tokens.DefaultLight, button.RenderState{}))
+			golden.Render(t, tc.name, canvasSize, scene(s, tokens.DefaultLight, button.RenderState{}))
 		})
 	}
 }
@@ -302,7 +149,7 @@ func TestExitGoldens(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			s := runExit(opts, tc.ticks)
-			renderGolden(t, tc.name, canvasSize, scene(s, tokens.DefaultLight, button.RenderState{}))
+			golden.Render(t, tc.name, canvasSize, scene(s, tokens.DefaultLight, button.RenderState{}))
 		})
 	}
 }
@@ -325,7 +172,7 @@ func TestSwapGoldens(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			out, in := runTransition(opts, tc.ticks)
-			renderGolden(t, tc.name, canvasSize, swapScene(
+			golden.Render(t, tc.name, canvasSize, swapScene(
 				out, tokens.DefaultLight,
 				in, tokens.DefaultDark,
 			))
@@ -341,12 +188,9 @@ func TestSwapGoldens(t *testing.T) {
 // opacity layer leaks paint past Opacity=0 (e.g., if a future
 // short-circuit replaces the layer push).
 func TestEnterStartIsBackground(t *testing.T) {
-	bg := capture(t, canvasSize, bgOnly)
-	startFrame := capture(t, canvasSize, scene(motion.Hidden, tokens.DefaultLight, button.RenderState{}))
-	if bg == nil || startFrame == nil {
-		return
-	}
-	if n := pixelDiff(bg, startFrame); n != 0 {
+	bg := golden.Capture(t, canvasSize, bgOnly)
+	startFrame := golden.Capture(t, canvasSize, scene(motion.Hidden, tokens.DefaultLight, button.RenderState{}))
+	if n := golden.PixelDiff(bg, startFrame); n != 0 {
 		t.Errorf("Enter start (Hidden state) should match background; %d pixels differ", n)
 	}
 }
@@ -354,13 +198,10 @@ func TestEnterStartIsBackground(t *testing.T) {
 // TestExitEndIsBackground asserts the exit animation, well after its
 // opacity tween completes, has faded the button to invisibility.
 func TestExitEndIsBackground(t *testing.T) {
-	bg := capture(t, canvasSize, bgOnly)
+	bg := golden.Capture(t, canvasSize, bgOnly)
 	end := runExit(motion.Options{}, 2*motion.DefaultFrames)
-	endFrame := capture(t, canvasSize, scene(end, tokens.DefaultLight, button.RenderState{}))
-	if bg == nil || endFrame == nil {
-		return
-	}
-	if n := pixelDiff(bg, endFrame); n != 0 {
+	endFrame := golden.Capture(t, canvasSize, scene(end, tokens.DefaultLight, button.RenderState{}))
+	if n := golden.PixelDiff(bg, endFrame); n != 0 {
 		t.Errorf("Exit end should match background; %d pixels differ (opacity=%v)", n, end.Opacity)
 	}
 }
@@ -373,12 +214,9 @@ func TestExitEndIsBackground(t *testing.T) {
 func TestEnterEndDistinctFromStart(t *testing.T) {
 	startState := runEnter(motion.Options{}, 0)
 	endState := runEnter(motion.Options{}, 2*motion.DefaultFrames)
-	startImg := capture(t, canvasSize, scene(startState, tokens.DefaultLight, button.RenderState{}))
-	endImg := capture(t, canvasSize, scene(endState, tokens.DefaultLight, button.RenderState{}))
-	if startImg == nil || endImg == nil {
-		return
-	}
-	if n := pixelDiff(startImg, endImg); n == 0 {
+	startImg := golden.Capture(t, canvasSize, scene(startState, tokens.DefaultLight, button.RenderState{}))
+	endImg := golden.Capture(t, canvasSize, scene(endState, tokens.DefaultLight, button.RenderState{}))
+	if n := golden.PixelDiff(startImg, endImg); n == 0 {
 		t.Error("Enter start and end render identically; expected the animation to change pixels")
 	}
 }
@@ -386,12 +224,9 @@ func TestEnterEndDistinctFromStart(t *testing.T) {
 // TestExitEndDistinctFromStart mirrors TestEnterEndDistinctFromStart
 // for the Exit primitive.
 func TestExitEndDistinctFromStart(t *testing.T) {
-	startImg := capture(t, canvasSize, scene(runExit(motion.Options{}, 0), tokens.DefaultLight, button.RenderState{}))
-	endImg := capture(t, canvasSize, scene(runExit(motion.Options{}, 2*motion.DefaultFrames), tokens.DefaultLight, button.RenderState{}))
-	if startImg == nil || endImg == nil {
-		return
-	}
-	if n := pixelDiff(startImg, endImg); n == 0 {
+	startImg := golden.Capture(t, canvasSize, scene(runExit(motion.Options{}, 0), tokens.DefaultLight, button.RenderState{}))
+	endImg := golden.Capture(t, canvasSize, scene(runExit(motion.Options{}, 2*motion.DefaultFrames), tokens.DefaultLight, button.RenderState{}))
+	if n := golden.PixelDiff(startImg, endImg); n == 0 {
 		t.Error("Exit start and end render identically; expected the animation to change pixels")
 	}
 }
@@ -405,17 +240,14 @@ func TestSwapMidShowsBoth(t *testing.T) {
 	midOut, midIn := runTransition(motion.Options{}, motion.DefaultFrames/2)
 	endOut, endIn := runTransition(motion.Options{}, 2*motion.DefaultFrames)
 
-	startImg := capture(t, canvasSize, swapScene(startOut, tokens.DefaultLight, startIn, tokens.DefaultDark))
-	midImg := capture(t, canvasSize, swapScene(midOut, tokens.DefaultLight, midIn, tokens.DefaultDark))
-	endImg := capture(t, canvasSize, swapScene(endOut, tokens.DefaultLight, endIn, tokens.DefaultDark))
+	startImg := golden.Capture(t, canvasSize, swapScene(startOut, tokens.DefaultLight, startIn, tokens.DefaultDark))
+	midImg := golden.Capture(t, canvasSize, swapScene(midOut, tokens.DefaultLight, midIn, tokens.DefaultDark))
+	endImg := golden.Capture(t, canvasSize, swapScene(endOut, tokens.DefaultLight, endIn, tokens.DefaultDark))
 
-	if startImg == nil || midImg == nil || endImg == nil {
-		return
-	}
-	if n := pixelDiff(startImg, midImg); n == 0 {
+	if n := golden.PixelDiff(startImg, midImg); n == 0 {
 		t.Error("swap-mid renders identically to swap-start; expected the incoming side to begin contributing")
 	}
-	if n := pixelDiff(midImg, endImg); n == 0 {
+	if n := golden.PixelDiff(midImg, endImg); n == 0 {
 		t.Error("swap-mid renders identically to swap-end; expected the outgoing side to still be visible")
 	}
 }
