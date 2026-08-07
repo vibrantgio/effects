@@ -52,7 +52,13 @@
 //
 // The label is shaped with the theme's cached shaper
 // (Typography.Shaper(), ADR-003: the theme owns the typeface) in the
-// LabelLarge role. Props.Shaper is an explicit per-instance override
+// LabelLarge role. That shaper is built once for the process and shared
+// by every component reading the same typography: spectrum's cache
+// lives behind the Typography value, so it survives the copy the map
+// function below makes of it (spectrum F5.1). It is not safe to use
+// from two goroutines — Gio lays the widget forest out on the one
+// goroutine that runs the event loop, which is what makes sharing it
+// correct. Props.Shaper is an explicit per-instance override
 // only; leave it nil in normal use. Since prism v0.2.0 the role's whole
 // text style — typeface, weight, size and line height — reaches
 // [github.com/vibrantgio/prism/button.Render], as does the theme's

@@ -47,9 +47,9 @@ var (
 
 // ---- button rendering ----
 
-// shaper is the canonical Roboto shaper, built once and cached inside
-// tokens.DefaultTypography; shaper construction dominates the per-test
-// wall time otherwise.
+// shaper is the canonical Roboto shaper, built once for the process and
+// cached behind tokens.DefaultTypography, which every copy of that value
+// shares; shaper construction dominates the per-test wall time otherwise.
 var shaper = tokens.DefaultTypography.DeterministicShaper()
 
 // renderBtn returns a layout.Widget for a button rendered with the
