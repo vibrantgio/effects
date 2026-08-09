@@ -7,12 +7,17 @@ enter and exit primitives, and `springbutton`, the spring-physics variant
 of prism's button.
 
 **Layer.** Tier 3 of ADR-001's stack, `mvu → spectrum → prism → pulse →
-cadence → markdown`. It imports mvu, `prism/button`, `prism/theme` and
-`prism/tokens`, plus the support library traer; cadence imports it, and
-spectrum imports `pulse/tween` today — an edge goal G-B3 removes. The
-prism-pulse cycle that once pinned half the organization to `prism v0.0.3`
-is cut: prism's root module no longer requires pulse, only its exempt
-`gallery` demo module does.
+cadence → markdown`. The prism-pulse cycle that once pinned half the
+organization to `prism v0.0.3` is cut, in both directions: prism's root
+module does not require pulse — only its exempt `gallery` demo does — and
+the `spectrum/transition` alias that carried the other half went with
+spectrum v0.2.0. Its root module imports `mvu`, `prism`, `spectrum` and
+`traer`, and reaches `font` through them. Imported by `cadence`. Outside
+the tier table, also by the demo module `prism/gallery` and the workbench
+applications `feeds`, `mindchat` and `watchlist`. Both directions are
+measured rather than typed — `scripts/check-layers.sh --edges` reports the
+graph and `scripts/sync-agents.sh` renders these sentences from it — so
+correcting them here changes nothing.
 
 **Read the canonical guide before you write code against this module.** It is
 the organization's one agent guide — the module inventory with current tags,
