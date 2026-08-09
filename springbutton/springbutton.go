@@ -10,8 +10,9 @@
 // [github.com/vibrantgio/prism/button.Render], the pure renderer, then
 // wraps the output in an [op.Affine] scale driven by a
 // [github.com/vibrantgio/pulse/spring.Spring]. The underlying button's
-// visual contract — hover, focus, press, disabled colours; 44 dp
-// minimum hit target; semantic ops — is preserved.
+// visual contract — the emphasis register; hover, focus, press,
+// disabled colours; 44 dp minimum hit target; semantic ops — is
+// preserved.
 //
 //	// Static prism.Button:
 //	w, _ := button.Button(theme, button.Props{Label: "Save", OnClick: save}).First()
@@ -234,12 +235,12 @@ func SpringButton(
 					semantic.DescriptionOp(desc).Add(gtx.Ops)
 					semantic.EnabledOp(!dis).Add(gtx.Ops)
 
-					renderState := button.RenderState{
+					state := renderState(props, button.RenderState{
 						Hovered:  hovered,
 						Focused:  focused,
 						Pressed:  pressed,
 						Disabled: dis,
-					}
+					})
 
 					macro := op.Record(gtx.Ops)
 					// Render takes the LabelLarge role's whole text style
@@ -250,7 +251,7 @@ func SpringButton(
 						props.Label,
 						tok.color, tok.spacing, tok.radius,
 						tok.label, tok.density,
-						renderState,
+						state,
 					)(gtx)
 					call := macro.Stop()
 
@@ -270,6 +271,25 @@ func SpringButton(
 			}
 		})
 	})
+}
+
+// renderState completes the interaction half of a
+// [github.com/vibrantgio/prism/button.RenderState] — which this package reads
+// off its own clickable — with every field the button's Props carries.
+//
+// It exists because this package renders through button.Render, the PURE
+// renderer, and so has to reassemble by hand what button.Button assembles for
+// itself. That reassembly is where a field goes missing: Props.Emphasis was
+// added to prism and this package went on drawing every spring button filled,
+// because the literal here simply did not mention it. The fix is one line; the
+// guard is that this function is the one place the copy happens, and
+// springbutton_internal_test.go asserts by reflection that every field
+// RenderState and Props share arrives here — so the NEXT field added to the
+// pair fails a test instead of silently drawing wrong.
+func renderState(props button.Props, interaction button.RenderState) button.RenderState {
+	s := interaction
+	s.Emphasis = props.Emphasis
+	return s
 }
 
 // resolvedTokens mirrors the per-emission token snapshot that
