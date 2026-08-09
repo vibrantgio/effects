@@ -21,6 +21,8 @@ github.com/vibrantgio/prism v0.3.0 h1:2inhCluIeZJq6wSbwomruwlxmdfIwZ43Tnk3RvCK6W
 github.com/vibrantgio/prism v0.3.0/go.mod h1:LMTwyJ8jk77j0nuvnq8aSKKbx4gkCQynZUoFwPZl4Js=
 github.com/vibrantgio/prism v0.4.0 h1:6NTvTKu8KfiEhD/rY4yi8dNAmVbKIYzpyWbnp09ENlI=
 github.com/vibrantgio/prism v0.4.0/go.mod h1:w+KUlehslvmiypyGntmuHkoRNiCY1891jvFz9dUdaU4=
+github.com/vibrantgio/prism v0.5.0 h1:ZuYtjCHI2X1Noa1uQlozlO1AAuX/Wh3WOQiFZhPqCSg=
+github.com/vibrantgio/prism v0.5.0/go.mod h1:w+KUlehslvmiypyGntmuHkoRNiCY1891jvFz9dUdaU4=
 github.com/vibrantgio/spectrum v0.4.0 h1:e1fBZuYkOq8blZRa4wH8JAl5BOvEIgmj8kyGhUfMwls=
 github.com/vibrantgio/spectrum v0.4.0/go.mod h1:yU6JfS8pETMwAUBlTKGqr6ffzOYR7qCngBPxtixQekU=
 github.com/vibrantgio/spectrum v0.4.1 h1:v7qC8SvjQUOQ+Afd4nmUl/Ic82j5ltAK1wnuHBeBNtI=
