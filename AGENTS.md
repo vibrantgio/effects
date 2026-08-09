@@ -3,8 +3,11 @@
 The effects layer of the Vibrant Gio design system: the `tween` and
 `spring` interpolators, `conductor`'s shared animation clock, `glow` and
 `depth` for luminance halos and Material-style cast shadows, `motion`'s
-enter and exit primitives, and `springbutton`, the spring-physics variant
-of prism's button.
+enter and exit primitives, `springbutton`, the spring-physics variant of
+prism's button, `transition`, which interpolates a whole set of colour
+tokens so a light-to-dark flip cross-fades instead of snapping, and `blur`,
+a CPU Gaussian approximation over `image.NRGBA` for the backdrop-blur
+pipeline Gio itself has no primitive for.
 
 **Layer.** Tier 3 of ADR-001's stack, `mvu → spectrum → prism → pulse →
 cadence → markdown`. The prism-pulse cycle that once pinned half the
