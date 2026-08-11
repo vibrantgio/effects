@@ -32,7 +32,7 @@
 // kept alive across emissions and frames; reconstructing it inside a
 // per-emission map function or a per-frame layout function would reset
 // the simulation every render. The canonical pattern — the same one
-// every prism component uses for its interaction state — is to allocate
+// every components component uses for its interaction state — is to allocate
 // inside an rx.Defer closure:
 //
 //	rx.Defer(func() rx.Observable[layout.Widget] {

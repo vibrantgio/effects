@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/vibrantgio/prism/button"
+	"github.com/vibrantgio/components/button"
 )
 
 // TestRenderStateForwardsEveryFieldPropsCarries is the guard that would have
@@ -12,8 +12,8 @@ import (
 //
 // SpringButton renders through button.Render, the pure renderer, so it has to
 // assemble the button.RenderState that button.Button assembles for itself.
-// Anything prism adds to BOTH button.Props and button.RenderState is a field
-// this package must copy across, and the failure mode is silence: prism gained
+// Anything components adds to BOTH button.Props and button.RenderState is a field
+// this package must copy across, and the failure mode is silence: components gained
 // Props.Emphasis, the literal here did not mention it, and every spring button
 // went on drawing filled with nothing red anywhere.
 //
@@ -47,7 +47,7 @@ func TestRenderStateForwardsEveryFieldPropsCarries(t *testing.T) {
 
 	if len(shared) == 0 {
 		t.Fatal("button.Props and button.RenderState share no field by name and type; " +
-			"either prism's API changed shape or this test no longer guards anything")
+			"either components' API changed shape or this test no longer guards anything")
 	}
 
 	got := reflect.ValueOf(renderState(props, button.RenderState{}))

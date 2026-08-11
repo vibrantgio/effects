@@ -24,11 +24,11 @@
 //
 // # Variant pattern
 //
-// Pulse never decorates prism globally. A motion-aware component is an
-// explicit variant, exported alongside its prism counterpart and chosen
+// Pulse never decorates components globally. A motion-aware component is an
+// explicit variant, exported alongside its components counterpart and chosen
 // by name at the call site, so that reading the call tells you the
-// component animates and the dependency runs pulse → prism and never
-// back. [Apply] is the mechanism: wrap a prism render function with it.
+// component animates and the dependency runs pulse → components and never
+// back. [Apply] is the mechanism: wrap a components render function with it.
 //
 //	bw := button.Render(shaper, label, colors, sp, rad, labelStyle, density, btnState)
 //	motion.Apply(gtx, primitive.State(), bw)

@@ -9,7 +9,7 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 
-	"github.com/vibrantgio/prism/golden"
+	"github.com/vibrantgio/components/golden"
 	glow "github.com/vibrantgio/pulse/glow"
 )
 

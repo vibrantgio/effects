@@ -1,20 +1,20 @@
 // Package springbutton ships the spring-physics variant of
-// prism/button: the same button, with a press that scales down and
+// components/button: the same button, with a press that scales down and
 // springs back.
 //
-// It is a sibling of [github.com/vibrantgio/prism/button.Button], not a
-// decorator over it. Pulse never animates prism globally — a caller
+// It is a sibling of [github.com/vibrantgio/components/button.Button], not a
+// decorator over it. Pulse never animates components globally — a caller
 // picks the animated component by name, so the call site says what it
-// does and the dependency runs pulse → prism and never back.
+// does and the dependency runs pulse → components and never back.
 // SpringButton owns its own [widget.Clickable] and renders through
-// [github.com/vibrantgio/prism/button.Render], the pure renderer, then
+// [github.com/vibrantgio/components/button.Render], the pure renderer, then
 // wraps the output in an [op.Affine] scale driven by a
 // [github.com/vibrantgio/pulse/spring.Spring]. The underlying button's
 // visual contract — the emphasis register; hover, focus, press,
 // disabled colours; 44 dp minimum hit target; semantic ops — is
 // preserved.
 //
-//	// Static prism.Button:
+//	// Static components button.Button:
 //	w, _ := button.Button(theme, button.Props{Label: "Save", OnClick: save}).First()
 //
 //	// Spring-physics variant:
@@ -36,7 +36,7 @@
 // While the spring is in flight the widget schedules its own redraws
 // via [op.InvalidateCmd]; once it settles, no further frames are
 // requested, so a SpringButton at rest costs the same per frame as a
-// static prism button.
+// static components button.
 //
 // # Frames, not seconds
 //
@@ -62,7 +62,7 @@
 // correct. Props.Shaper is an explicit per-instance override
 // only; leave it nil in normal use. Since prism v0.2.0 the role's whole
 // text style — typeface, weight, size and line height — reaches
-// [github.com/vibrantgio/prism/button.Render], as does the theme's
+// [github.com/vibrantgio/components/button.Render], as does the theme's
 // Density, so a spring button is glyph- and pixel-identical to the
 // static one at scale 1.
 //
@@ -85,8 +85,8 @@ import (
 	"gioui.org/widget"
 
 	"github.com/reactivego/rx"
+	"github.com/vibrantgio/components/button"
 	"github.com/vibrantgio/mvu"
-	"github.com/vibrantgio/prism/button"
 	"github.com/vibrantgio/pulse/spring"
 	"github.com/vibrantgio/theme/theme"
 	"github.com/vibrantgio/theme/tokens"
@@ -114,7 +114,7 @@ const (
 const invDt = 60.0
 
 // Options configures the spring physics layered on top of
-// prism/button. Zero-valued fields use package defaults so an empty
+// components/button. Zero-valued fields use package defaults so an empty
 // Options{} produces the canonical SpringButton feel.
 type Options struct {
 	// Stiffness, Damping, Mass are the same spring parameters
@@ -132,10 +132,10 @@ type Options struct {
 }
 
 // SpringButton returns an rx.Observable[layout.Widget] that renders
-// the prism.Button visual with a spring-driven scale on press/release.
+// the components button.Button visual with a spring-driven scale on press/release.
 // All [button.Props] fields are honoured (label, description, disabled
 // observable, OnClick, Message, custom Shaper) — the FRP and MVU
-// integration paths from prism/button continue to work unchanged.
+// integration paths from components/button continue to work unchanged.
 func SpringButton(
 	th rx.Observable[theme.Theme],
 	props button.Props,
@@ -274,7 +274,7 @@ func SpringButton(
 }
 
 // renderState completes the interaction half of a
-// [github.com/vibrantgio/prism/button.RenderState] — which this package reads
+// [github.com/vibrantgio/components/button.RenderState] — which this package reads
 // off its own clickable — with every field the button's Props carries.
 //
 // It exists because this package renders through button.Render, the PURE
@@ -293,7 +293,7 @@ func renderState(props button.Props, interaction button.RenderState) button.Rend
 }
 
 // resolvedTokens mirrors the per-emission token snapshot that
-// prism/button keeps unexported. Spring composition operates in the
+// components/button keeps unexported. Spring composition operates in the
 // same token space as the static button so the visual contract matches
 // at scale = 1.
 type resolvedTokens struct {

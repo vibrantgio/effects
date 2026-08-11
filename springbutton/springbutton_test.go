@@ -10,7 +10,7 @@ import (
 	"gioui.org/unit"
 
 	"github.com/reactivego/rx"
-	"github.com/vibrantgio/prism/button"
+	"github.com/vibrantgio/components/button"
 	"github.com/vibrantgio/pulse/spring"
 	"github.com/vibrantgio/pulse/springbutton"
 	"github.com/vibrantgio/theme/theme"

@@ -4,22 +4,22 @@ The effects layer of the Vibrant Gio design system: the `tween` and
 `spring` interpolators, `conductor`'s shared animation clock, `glow` and
 `depth` for luminance halos and Material-style cast shadows, `motion`'s
 enter and exit primitives, `springbutton`, the spring-physics variant of
-prism's button, `transition`, which interpolates a whole set of colour
+components' button, `transition`, which interpolates a whole set of colour
 tokens so a light-to-dark flip cross-fades instead of snapping, and `blur`,
 a CPU Gaussian approximation over `image.NRGBA` for the backdrop-blur
 pipeline Gio itself has no primitive for.
 
-**Layer.** Tier 3 of ADR-001's stack, `mvu → theme → prism → pulse →
+**Layer.** Tier 3 of ADR-001's stack, `mvu → theme → components → pulse →
 cadence → markdown`. The prism-pulse cycle that once pinned half the
-organization to `prism v0.0.3` is cut, in both directions: prism's root
+organization to `prism v0.0.3` is cut, in both directions: components' root
 module does not require pulse — only its exempt `gallery` demo does — and
 the `spectrum/transition` alias that carried the other half went with
-spectrum v0.2.0. Its root module imports `mvu`, `prism`, `theme` and
+spectrum v0.2.0. Its root module imports `components`, `mvu`, `theme` and
 `traer`, and reaches `font` through them. Imported by `cadence`. Outside
-the tier table, also by the demo module `prism/gallery` and the workbench
-applications `feeds`, `mindchat` and `watchlist`. Both directions are
-measured rather than typed — `scripts/check-layers.sh --edges` reports the
-graph and `scripts/sync-agents.sh` renders these sentences from it — so
+the tier table, also by the demo module `components/gallery` and the
+workbench applications `feeds`, `mindchat` and `watchlist`. Both directions
+are measured rather than typed — `scripts/check-layers.sh --edges` reports
+the graph and `scripts/sync-agents.sh` renders these sentences from it — so
 correcting them here changes nothing.
 
 **Read the canonical guide before you write code against this module.** It is
@@ -39,13 +39,13 @@ root.
 
 **Golden images.** Tests in four packages compare rendered output against
 PNGs committed under `testdata/golden/`. They render through
-`github.com/vibrantgio/prism/golden`, which declares `-golden.update` and
-is shared with `cadence`, `markdown` and `workbench`. Do not inline a copy
-of it, and do not declare a second `-golden.update`: two registrations of
-one flag name in a single test binary panic in `flag.Bool` at init, before
-any test runs. When a change legitimately moves pixels, regenerate them
-within the same change, look at what came out, and say so in the commit.
-From the repository root:
+`github.com/vibrantgio/components/golden`, which declares `-golden.update`
+and is shared with `cadence`, `markdown` and `workbench`. Do not inline a
+copy of it, and do not declare a second `-golden.update`: two registrations
+of one flag name in a single test binary panic in `flag.Bool` at init,
+before any test runs. When a change legitimately moves pixels, regenerate
+them within the same change, look at what came out, and say so in the
+commit. From the repository root:
 
     go test ./depth ./glow ./motion ./transition -golden.update
 

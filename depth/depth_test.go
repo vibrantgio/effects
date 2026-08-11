@@ -9,7 +9,7 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 
-	"github.com/vibrantgio/prism/golden"
+	"github.com/vibrantgio/components/golden"
 	depth "github.com/vibrantgio/pulse/depth"
 	"github.com/vibrantgio/theme/tokens"
 )

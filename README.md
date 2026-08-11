@@ -16,26 +16,26 @@ is a value type: from, to, frames, a lerp function, no clock and no state, for
 motion that just has to land where you said. `spring` is a real damped-spring
 simulation over one [traer](https://github.com/vibrantgio/traer) particle, for
 motion that has to feel like it has mass. `motion` composes both,
-`springbutton` is prism's button wired to a spring, and `transition` teaches
+`springbutton` is components' button wired to a spring, and `transition` teaches
 `tween` the colour-token contract. Alongside the animation core sit the static
 effects — `depth` and `glow`, gradient compositions — and `blur`, the module's
 own Gaussian blur pipeline for the primitive Gio does not have.
 
-**pulse never decorates prism globally.** There is no theme flag and no wrapper
+**pulse never decorates components globally.** There is no theme flag and no wrapper
 that quietly animates every button in an application. An animated component is
-an explicit variant, exported alongside its prism counterpart and named at the
+an explicit variant, exported alongside its components counterpart and named at the
 call site — `springbutton.SpringButton` where you would have written
 `button.Button` — so reading the call tells you the thing moves, the
 unanimated component keeps costing nothing, and the dependency runs pulse →
-prism and never the other way. `motion.Apply` is the mechanism for building
-your own: wrap any prism render function in it.
+components and never the other way. `motion.Apply` is the mechanism for building
+your own: wrap any components render function in it.
 
 ## Where it sits
 
-Tier 3 of the stack — `mvu → theme → prism → pulse → cadence → markdown`.
+Tier 3 of the stack — `mvu → theme → components → pulse → cadence → markdown`.
 pulse imports [mvu](https://github.com/vibrantgio/mvu), `theme` and `tokens`
 from [theme](https://github.com/vibrantgio/theme), `button` from
-[prism](https://github.com/vibrantgio/prism), and the
+[components](https://github.com/vibrantgio/components), and the
 [traer](https://github.com/vibrantgio/traer) particle system.
 [cadence](https://github.com/vibrantgio/cadence) is built on it — its toast
 takes its cast shadow from `depth` and its fade from `tween` — and one
@@ -44,7 +44,7 @@ directly. The [organization page](https://github.com/vibrantgio) has the full
 tier table.
 
 The layering inversions that used to run through this module are cut. The
-prism↔pulse cycle is gone: prism's root module does not require pulse, and
+prism↔pulse cycle is gone: components' root module does not require pulse, and
 only its demo `gallery` — a nested module, exempt by ADR-001 — imports
 `springbutton`. And `transition`, which once lived in spectrum and dragged
 tier 1 up to tier 3, now lives here. The deprecated `spectrum/transition`
@@ -65,7 +65,7 @@ github.com/reactivego/rx v0.3.0 and Go 1.25.1.
 | `tween` | `Tween[T]{From, To, Frames, Lerp}` and `At(n)`. A value type with no clock, no easing and no state — the caller decides what a frame is. `LerpFloat64` and `LerpNRGBA` cover opacity, position and colour. |
 | `spring` | One scalar pulled toward a target by a damped spring, simulated as a two-particle `traer.ParticleSystem`. `SetTarget` retargets mid-flight without losing velocity; `Settled` says when to stop asking for frames. |
 | `motion` | `Enter`, `Exit` and `Transition`: a tween for opacity and a spring for scale, ticked together. `Apply` is the bridge to Gio — it lays a widget out once and replays it inside a scale-around-centre transform and an opacity layer, so the footprint never jitters. Defaults resolve from the token motion scale: `FramesAt` converts a duration stop at a frame rate, `SpringOptions` converts a `tokens.Spring` preset. |
-| `springbutton` | `prism/button` with a press that scales down and springs back, on the same props and the same visual contract — including `Props.Emphasis`, since it renders through the pure `button.Render` and has to copy across every field the two structs share. The one shipped variant. |
+| `springbutton` | `components/button` with a press that scales down and springs back, on the same props and the same visual contract — including `Props.Emphasis`, since it renders through the pure `button.Render` and has to copy across every field the two structs share. The one shipped variant. |
 | `transition` | Interpolates a whole `tokens.ColorTokens` set between two values, so a light-to-dark flip can cross-fade rather than snap. Moved here from spectrum in the G-B3 inversion; the `spectrum/transition` alias that forwarded here is deleted as of spectrum v0.2.0. |
 | `blur` | The blur Gio does not have: a parallel three-pass box approximation of a Gaussian (`Gaussian`, `Blurrer`), `Cache` for static imagery blurred once and reused, and `Backdrop` — the "blurred behind the dialog" pipeline on `gioui.org/gpu/headless`, with `FallbackOp` and `Available` for the platforms where headless rendering is not. |
 | `depth` | A Material-style cast shadow under a rectangle, composed from eight linear gradients, with extent and offset read from a `tokens.ElevationLevel`. Opt-in vibrancy per ADR-005: a shadow marks what floats and can leave — a toast, a popover, a menu — never what is raised in place, which reads as raised by its surface step alone. The E2.2 caller audit is recorded in the package doc. |
@@ -100,7 +100,7 @@ return tw.At(frame)
 ```
 
 A variant is chosen by name and takes the same props as the component it
-varies. From `prism/gallery`, which renders the static and the spring button
+varies. From `components/gallery`, which renders the static and the spring button
 side by side:
 
 ```go
@@ -121,7 +121,7 @@ tuned but does not add up; both are in the status section below.
 
 Driving a `spring` or a `motion` primitive yourself is the other half. The
 object is stateful, so it has to be allocated once per subscription — inside
-the `rx.Defer` closure, the same place a prism component keeps its
+the `rx.Defer` closure, the same place a components widget keeps its
 `widget.Clickable` — and then ticked once per frame, asking for the next frame
 only while it is still moving:
 
@@ -215,8 +215,8 @@ estimated.
   ones really in use, and `spring` is used through `motion` and
   `springbutton`.
 - **`springbutton` is the only variant that exists.** The design calls for a
-  spring variant of each interactive prism component; one was built.
-  Everything needed for the rest is here — `motion.Apply` takes any prism
+  spring variant of each interactive components component; one was built.
+  Everything needed for the rest is here — `motion.Apply` takes any components
   render function — but the wrapper packages are not written, and no phase of
   the current plan claims them.
 - **`motion`'s defaults do not finish together.** `DefaultFrames` and

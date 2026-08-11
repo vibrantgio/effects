@@ -11,8 +11,8 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 
-	"github.com/vibrantgio/prism/button"
-	"github.com/vibrantgio/prism/golden"
+	"github.com/vibrantgio/components/button"
+	"github.com/vibrantgio/components/golden"
 	motion "github.com/vibrantgio/pulse/motion"
 	"github.com/vibrantgio/theme/tokens"
 )
@@ -42,7 +42,7 @@ var shaper = tokens.DefaultTypography.DeterministicShaper()
 
 // renderBtn returns a layout.Widget for a button rendered with the
 // given colour tokens and visual state. Sharp-cornered, empty-label —
-// matches the determinism trick in prism/button/button_test.go so the
+// matches the determinism trick in components/button/button_test.go so the
 // motion-applied output stays bit-stable across GPU contexts.
 func renderBtn(colors tokens.ColorTokens, s button.RenderState) layout.Widget {
 	sharp := tokens.RadiusScale{}
