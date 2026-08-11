@@ -68,7 +68,7 @@ import (
 
 	"github.com/vibrantgio/pulse/spring"
 	"github.com/vibrantgio/pulse/tween"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // State captures the visual transformation applied to a widget at one
@@ -94,7 +94,7 @@ var Visible = State{Opacity: 1, Scale: 1}
 var Hidden = State{Opacity: 0, Scale: DefaultFromScale}
 
 // Defaults applied when a corresponding [Options] field is zero-valued.
-// Since E3.1 the timing defaults resolve from the spectrum motion tokens
+// Since E3.1 the timing defaults resolve from the theme motion tokens
 // ([tokens.Motion], the value every theme.Theme.Motion emits by default)
 // rather than from local constants.
 const (

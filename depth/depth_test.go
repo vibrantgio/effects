@@ -11,7 +11,7 @@ import (
 
 	"github.com/vibrantgio/prism/golden"
 	depth "github.com/vibrantgio/pulse/depth"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 const (

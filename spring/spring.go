@@ -13,7 +13,7 @@
 // # The zero Options is a usable default
 //
 // [Options] fills a zero Stiffness from [DefaultStiffness] (80) and a
-// zero Mass from [DefaultMass] (1) — the values published as spectrum's
+// zero Mass from [DefaultMass] (1) — the values published as theme's
 // tokens.Motion.SpringDefault preset — and then, last, fills a zero
 // Damping with critical damping 2·√(k·m) computed from whatever
 // Stiffness and Mass resolved to. The result is a brisk, no-overshoot
@@ -68,7 +68,7 @@ import (
 	"github.com/vibrantgio/traer"
 )
 
-// Default parameters are the values of spectrum's
+// Default parameters are the values of theme's
 // tokens.Motion.SpringDefault preset (FX.2). They are hardcoded rather
 // than imported: spring is a pure-physics package over traer, and the
 // design-token surface stays out of it. There is no DefaultDamping —

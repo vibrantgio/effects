@@ -14,7 +14,7 @@ import (
 	"github.com/vibrantgio/prism/button"
 	"github.com/vibrantgio/prism/golden"
 	motion "github.com/vibrantgio/pulse/motion"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // ---- fixture geometry & colours ----

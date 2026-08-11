@@ -87,7 +87,7 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // keyShadowAlpha is Material 3's recommended key-shadow opacity (~30 %).

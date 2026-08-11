@@ -8,7 +8,7 @@ import (
 
 	"github.com/vibrantgio/prism/golden"
 	"github.com/vibrantgio/pulse/transition"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // TestThemeTransitionGolden discharges G2.3 Measurable: a golden test of a

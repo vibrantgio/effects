@@ -33,7 +33,7 @@ var exceptions = []exception{
 
 // TestNoLiteralColors enforces the design-token rule: library source must
 // not hard-code colour values. Every colour a component paints comes from
-// spectrum/tokens (and, once D1.1 lands, spectrum/color) — a hex literal in
+// theme/tokens (and, once D1.1 lands, theme/color) — a hex literal in
 // component code silently forks the palette.
 //
 // Like TestNoGofontImports, the check walks the entire repository from the
@@ -61,9 +61,9 @@ var exceptions = []exception{
 // Any remaining hard-coded colour in library source must be allow-listed
 // in exceptions below with a reason, or migrated to a token.
 //
-// spectrum is exempt by not carrying this test: spectrum/tokens (and
-// spectrum/color once D1.1 creates it) is where literal colours
-// legitimately live. If this lint ever lands in spectrum, those two
+// theme is exempt by not carrying this test: theme/tokens (and
+// theme/color once D1.1 creates it) is where literal colours
+// legitimately live. If this lint ever lands in theme, those two
 // packages are its allow-list.
 func TestNoLiteralColors(t *testing.T) {
 	root, err := repoRoot()
@@ -133,7 +133,7 @@ func TestNoLiteralColors(t *testing.T) {
 
 	if len(offenders) > 0 {
 		t.Errorf("hard-coded colour literals in library source "+
-			"(design colours come from spectrum tokens; "+
+			"(design colours come from theme tokens; "+
 			"fix, or allow-list with a reason in internal/lint/noliteralcolor_test.go):\n  %s",
 			strings.Join(offenders, "\n  "))
 	}

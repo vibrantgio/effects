@@ -4,7 +4,7 @@
 // It is one bridge and nothing else. [github.com/vibrantgio/pulse/tween]
 // owns the generic Tween[T] machinery and the per-channel LerpNRGBA
 // primitive; this package supplies the two pieces that teach it the
-// spectrum theme contract — [LerpColorTokens], which lerps every field of
+// theme theme contract — [LerpColorTokens], which lerps every field of
 // a [tokens.ColorTokens] at a parameter in [0,1], and [ColorTokensTween],
 // which packages that as a Tween you sample with At.
 //
@@ -18,9 +18,9 @@
 // surface roles, more visible on Primary. And the tween only produces
 // values: nothing here drives it. Emitting the intermediate ColorTokens as
 // a theme, frame by frame, is the caller's job, which is why an
-// OS-driven appearance change through spectrum/system still snaps today.
+// OS-driven appearance change through theme/system still snaps today.
 //
-// This package lived at github.com/vibrantgio/spectrum/transition; it
+// This package lived at github.com/vibrantgio/theme/transition; it
 // moved here because it is animation code — a foundation module should
 // not depend on the effects layer. The deprecated alias left behind at
 // the old path is gone as of spectrum v0.2.0; this is the only path.
@@ -28,7 +28,7 @@ package transition
 
 import (
 	"github.com/vibrantgio/pulse/tween"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // lerpRamp interpolates each step of two [tokens.Ramp] values using
@@ -78,7 +78,7 @@ func LerpColorTokens(from, to tokens.ColorTokens, t float64) tokens.ColorTokens 
 
 // ColorTokensTween constructs a [tween.Tween] interpolating from a to b
 // over frames frames, using [LerpColorTokens]. This is the integration
-// bridge between the generic Tween and the spectrum theme contract.
+// bridge between the generic Tween and the theme theme contract.
 func ColorTokensTween(a, b tokens.ColorTokens, frames int) tween.Tween[tokens.ColorTokens] {
 	return tween.Tween[tokens.ColorTokens]{
 		From:   a,

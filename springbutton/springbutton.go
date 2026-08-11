@@ -54,7 +54,7 @@
 // The label is shaped with the theme's cached shaper
 // (Typography.Shaper(), ADR-003: the theme owns the typeface) in the
 // LabelLarge role. That shaper is built once for the process and shared
-// by every component reading the same typography: spectrum's cache
+// by every component reading the same typography: theme's cache
 // lives behind the Typography value, so it survives the copy the map
 // function below makes of it (spectrum F5.1). It is not safe to use
 // from two goroutines — Gio lays the widget forest out on the one
@@ -88,8 +88,8 @@ import (
 	"github.com/vibrantgio/mvu"
 	"github.com/vibrantgio/prism/button"
 	"github.com/vibrantgio/pulse/spring"
-	"github.com/vibrantgio/spectrum/theme"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/theme"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // Defaults tuned for a visible-but-snappy button press. The amplitude

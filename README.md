@@ -32,9 +32,9 @@ your own: wrap any prism render function in it.
 
 ## Where it sits
 
-Tier 3 of the stack — `mvu → spectrum → prism → pulse → cadence → markdown`.
+Tier 3 of the stack — `mvu → theme → prism → pulse → cadence → markdown`.
 pulse imports [mvu](https://github.com/vibrantgio/mvu), `theme` and `tokens`
-from [spectrum](https://github.com/vibrantgio/spectrum), `button` from
+from [theme](https://github.com/vibrantgio/theme), `button` from
 [prism](https://github.com/vibrantgio/prism), and the
 [traer](https://github.com/vibrantgio/traer) particle system.
 [cadence](https://github.com/vibrantgio/cadence) is built on it — its toast
@@ -210,7 +210,7 @@ estimated.
   outside their own tests — tested, golden-tested, working, and never wired
   to a component. `transition` now has no importer at all: its one consumer
   was the `spectrum/transition` shim, deleted in spectrum v0.2.0, and
-  nothing actually drives a theme cross-fade (see spectrum's status).
+  nothing actually drives a theme cross-fade (see theme's status).
   `depth`, `tween`, `blur` and `springbutton` are the
   ones really in use, and `spring` is used through `motion` and
   `springbutton`.

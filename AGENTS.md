@@ -9,12 +9,12 @@ tokens so a light-to-dark flip cross-fades instead of snapping, and `blur`,
 a CPU Gaussian approximation over `image.NRGBA` for the backdrop-blur
 pipeline Gio itself has no primitive for.
 
-**Layer.** Tier 3 of ADR-001's stack, `mvu → spectrum → prism → pulse →
+**Layer.** Tier 3 of ADR-001's stack, `mvu → theme → prism → pulse →
 cadence → markdown`. The prism-pulse cycle that once pinned half the
 organization to `prism v0.0.3` is cut, in both directions: prism's root
 module does not require pulse — only its exempt `gallery` demo does — and
 the `spectrum/transition` alias that carried the other half went with
-spectrum v0.2.0. Its root module imports `mvu`, `prism`, `spectrum` and
+spectrum v0.2.0. Its root module imports `mvu`, `prism`, `theme` and
 `traer`, and reaches `font` through them. Imported by `cadence`. Outside
 the tier table, also by the demo module `prism/gallery` and the workbench
 applications `feeds`, `mindchat` and `watchlist`. Both directions are

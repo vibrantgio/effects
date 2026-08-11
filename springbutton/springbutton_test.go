@@ -13,7 +13,7 @@ import (
 	"github.com/vibrantgio/prism/button"
 	"github.com/vibrantgio/pulse/spring"
 	"github.com/vibrantgio/pulse/springbutton"
-	"github.com/vibrantgio/spectrum/theme"
+	"github.com/vibrantgio/theme/theme"
 )
 
 // TestSpringButtonObservableEmits is the construction smoke test: the

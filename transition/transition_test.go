@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/vibrantgio/pulse/transition"
-	"github.com/vibrantgio/spectrum/tokens"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 func TestLerpColorTokensEndpoints(t *testing.T) {
