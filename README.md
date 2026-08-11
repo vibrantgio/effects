@@ -32,12 +32,12 @@ your own: wrap any components render function in it.
 
 ## Where it sits
 
-Tier 3 of the stack — `mvu → theme → components → effects → cadence → markdown`.
+Tier 3 of the stack — `mvu → theme → components → effects → patterns → markdown`.
 effects imports [mvu](https://github.com/vibrantgio/mvu), `theme` and `tokens`
 from [theme](https://github.com/vibrantgio/theme), `button` from
 [components](https://github.com/vibrantgio/components), and the
 [traer](https://github.com/vibrantgio/traer) particle system.
-[cadence](https://github.com/vibrantgio/cadence) is built on it — its toast
+[patterns](https://github.com/vibrantgio/patterns) is built on it — its toast
 takes its cast shadow from `depth` and its fade from `tween` — and one
 [workbench](https://github.com/vibrantgio/workbench) application uses `depth`
 directly. The [organization page](https://github.com/vibrantgio) has the full
@@ -75,7 +75,7 @@ github.com/reactivego/rx v0.3.0 and Go 1.25.1.
 ## Usage
 
 The two packages the design system leans on hardest are `depth` and `tween`,
-and both are one line inside a render function. `cadence/toast` uses both:
+and both are one line inside a render function. `patterns/toast` uses both:
 the cast shadow goes down first — a toast floats and can leave, exactly what
 ADR-005 reserves shadows for — and the surface is painted over it:
 
@@ -240,7 +240,7 @@ estimated.
   square corners, so a foreground with rounded corners shows dark wedges at
   all four. There is no opacity parameter, so a shadow that has to fade with
   its surface must be wrapped in a `paint.PushOpacity` layer, as
-  `cadence/toast` does. And the black is not a token role, so the same shadow
+  `patterns/toast` does. And the black is not a token role, so the same shadow
   that separates a toast on a light background barely registers on a dark
   one. What changed around it is the role: elevation is now a tonal surface
   ladder (`SurfaceAt`, ADR-005) and this package is the explicit opt-in for
@@ -261,7 +261,7 @@ estimated.
 - **Reduced motion is honoured by the theme, not yet by the springs.** The
   theme's `Motion` observable emits `MotionScale.Reduced()` — every duration
   zero — while the OS preference is on, and duration-driven consumers
-  (cadence's toast fade and tooltip delay resolve from the theme) snap for
+  (patterns' toast fade and tooltip delay resolve from the theme) snap for
   free. But `springbutton` does not subscribe `Motion`, so its press spring
   still runs at full amplitude under reduced motion; a spring consumer must
   read the zero durations as the snap signal itself.

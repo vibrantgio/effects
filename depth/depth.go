@@ -24,13 +24,13 @@
 //
 // The organization's three callers, judged against that criterion:
 //
-//   - cadence/toast keeps its shadow: a toast floats over the content
+//   - patterns/toast keeps its shadow: a toast floats over the content
 //     plane and leaves on its own, and on dark themes the shadow, not
 //     the fill, is what separates it.
 //   - workbench/mindchat's undo bar keeps its shadow: a transient bar
 //     floating over the chat surfaces, a toast by another name. (App
 //     code is not governed by this verdict; recorded as guidance.)
-//   - cadence/card's Elevated variant loses its shadow: a card is
+//   - patterns/card's Elevated variant loses its shadow: a card is
 //     raised in place, so it becomes a level-2 surface fill. E2.3
 //     executes the migration.
 //
@@ -64,7 +64,7 @@
 // tiles of the penumbra grow inward to cover the notch between the
 // rounded interior and the old square corner, keeping the alpha ramp
 // seam-free. And opacity scales the whole ramp, so a shadow that fades
-// with its surface — cadence/toast's — passes its fade alpha straight
+// with its surface — patterns/toast's — passes its fade alpha straight
 // through instead of wrapping the call in a [paint.PushOpacity] layer.
 // Radius 0 and opacity 1 reproduce the old square, full-strength
 // shadow exactly.

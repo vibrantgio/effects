@@ -10,12 +10,12 @@ a CPU Gaussian approximation over `image.NRGBA` for the backdrop-blur
 pipeline Gio itself has no primitive for.
 
 **Layer.** Tier 3 of ADR-001's stack, `mvu → theme → components → effects →
-cadence → markdown`. The prism-pulse cycle that once pinned half the
+patterns → markdown`. The prism-pulse cycle that once pinned half the
 organization to `prism v0.0.3` is cut, in both directions: components' root
 module does not require effects — only its exempt `gallery` demo does — and
 the `spectrum/transition` alias that carried the other half went with
 spectrum v0.2.0. Its root module imports `components`, `mvu`, `theme` and
-`traer`, and reaches `font` through them. Imported by `cadence`. Outside
+`traer`, and reaches `font` through them. Imported by `patterns`. Outside
 the tier table, also by the demo module `components/gallery` and the
 workbench applications `feeds`, `mindchat` and `watchlist`. Both directions
 are measured rather than typed — `scripts/check-layers.sh --edges` reports
@@ -40,7 +40,7 @@ root.
 **Golden images.** Tests in four packages compare rendered output against
 PNGs committed under `testdata/golden/`. They render through
 `github.com/vibrantgio/components/golden`, which declares `-golden.update`
-and is shared with `cadence`, `markdown` and `workbench`. Do not inline a
+and is shared with `markdown`, `patterns` and `workbench`. Do not inline a
 copy of it, and do not declare a second `-golden.update`: two registrations
 of one flag name in a single test binary panic in `flag.Bool` at init,
 before any test runs. When a change legitimately moves pixels, regenerate

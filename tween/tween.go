@@ -5,7 +5,7 @@
 // easing, and no clock. Callers drive it by passing a frame index to
 // [Tween.At]. The frame index is whatever the caller chooses to use as
 // "time" — render-loop frames, real-time samples, or test fixtures.
-// cadence/toast counts Frames in milliseconds and feeds [Tween.At] a
+// patterns/toast counts Frames in milliseconds and feeds [Tween.At] a
 // millisecond age, which works precisely because the unit is never
 // interpreted here.
 //
