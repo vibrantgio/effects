@@ -13,7 +13,7 @@ import (
 
 	"github.com/vibrantgio/components/button"
 	"github.com/vibrantgio/components/golden"
-	motion "github.com/vibrantgio/pulse/motion"
+	motion "github.com/vibrantgio/effects/motion"
 	"github.com/vibrantgio/theme/tokens"
 )
 

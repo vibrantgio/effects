@@ -10,7 +10,7 @@ import (
 	"gioui.org/op/paint"
 
 	"github.com/vibrantgio/components/golden"
-	glow "github.com/vibrantgio/pulse/glow"
+	glow "github.com/vibrantgio/effects/glow"
 )
 
 // ---- test fixture geometry ----

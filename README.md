@@ -1,8 +1,8 @@
-# pulse
+# effects
 
 The effects layer of [Vibrant Gio](https://github.com/vibrantgio), a design
 system for native desktop applications on macOS, Windows and Linux, written in
-pure Go on [Gio](https://gioui.org). pulse is where a component stops being
+pure Go on [Gio](https://gioui.org). effects is where a component stops being
 correct and starts being alive: the shadow under a toast, the halo around a
 focused thing, the press that gives way under the pointer and springs back, the
 fade that carries a notification out, the frosted glass behind a dialog.
@@ -10,7 +10,7 @@ fade that carries a notification out, the frosted glass behind a dialog.
 Gio hands you `op/paint` and a frame callback. It has no shadow, no radial
 gradient, no blur, no animation clock and no notion of a spring — a widget that
 moves is a widget whose author wrote the interpolation, decided what "one
-frame" means, and remembered to ask for the next frame. pulse writes that once.
+frame" means, and remembered to ask for the next frame. effects writes that once.
 The animation core is two flavours that answer to different problems. `tween`
 is a value type: from, to, frames, a lerp function, no clock and no state, for
 motion that just has to land where you said. `spring` is a real damped-spring
@@ -21,19 +21,19 @@ motion that has to feel like it has mass. `motion` composes both,
 effects — `depth` and `glow`, gradient compositions — and `blur`, the module's
 own Gaussian blur pipeline for the primitive Gio does not have.
 
-**pulse never decorates components globally.** There is no theme flag and no wrapper
+**effects never decorates components globally.** There is no theme flag and no wrapper
 that quietly animates every button in an application. An animated component is
 an explicit variant, exported alongside its components counterpart and named at the
 call site — `springbutton.SpringButton` where you would have written
 `button.Button` — so reading the call tells you the thing moves, the
-unanimated component keeps costing nothing, and the dependency runs pulse →
+unanimated component keeps costing nothing, and the dependency runs effects →
 components and never the other way. `motion.Apply` is the mechanism for building
 your own: wrap any components render function in it.
 
 ## Where it sits
 
-Tier 3 of the stack — `mvu → theme → components → pulse → cadence → markdown`.
-pulse imports [mvu](https://github.com/vibrantgio/mvu), `theme` and `tokens`
+Tier 3 of the stack — `mvu → theme → components → effects → cadence → markdown`.
+effects imports [mvu](https://github.com/vibrantgio/mvu), `theme` and `tokens`
 from [theme](https://github.com/vibrantgio/theme), `button` from
 [components](https://github.com/vibrantgio/components), and the
 [traer](https://github.com/vibrantgio/traer) particle system.
@@ -44,7 +44,7 @@ directly. The [organization page](https://github.com/vibrantgio) has the full
 tier table.
 
 The layering inversions that used to run through this module are cut. The
-prism↔pulse cycle is gone: components' root module does not require pulse, and
+prism↔pulse cycle is gone: components' root module does not require effects, and
 only its demo `gallery` — a nested module, exempt by ADR-001 — imports
 `springbutton`. And `transition`, which once lived in spectrum and dragged
 tier 1 up to tier 3, now lives here. The deprecated `spectrum/transition`
@@ -52,7 +52,7 @@ alias shim that forwarded to it is gone as of spectrum v0.2.0, so this is
 the only path.
 
 ```sh
-go get github.com/vibrantgio/pulse
+go get github.com/vibrantgio/effects
 ```
 
 Every module in the organization is on gioui.org v0.10.1,

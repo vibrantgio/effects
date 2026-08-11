@@ -1,9 +1,9 @@
 // Package motion provides enter/exit/transition primitives for animating
 // widgets into, out of, and between visual states.
 //
-// Each primitive composes [github.com/vibrantgio/pulse/tween]
+// Each primitive composes [github.com/vibrantgio/effects/tween]
 // (deterministic, frame-indexed opacity) and
-// [github.com/vibrantgio/pulse/spring] (physics-driven scale): opacity
+// [github.com/vibrantgio/effects/spring] (physics-driven scale): opacity
 // provides predictable timing, spring provides physical character. The
 // two run on independent timescales — opacity finishes at frame Frames,
 // scale settles when the spring's restoring force balances out.
@@ -24,17 +24,17 @@
 //
 // # Variant pattern
 //
-// Pulse never decorates components globally. A motion-aware component is an
+// Effects never decorates components globally. A motion-aware component is an
 // explicit variant, exported alongside its components counterpart and chosen
 // by name at the call site, so that reading the call tells you the
-// component animates and the dependency runs pulse → components and never
+// component animates and the dependency runs effects → components and never
 // back. [Apply] is the mechanism: wrap a components render function with it.
 //
 //	bw := button.Render(shaper, label, colors, sp, rad, labelStyle, density, btnState)
 //	motion.Apply(gtx, primitive.State(), bw)
 //
 // This package ships only the primitives. The one variant that exists
-// today is [github.com/vibrantgio/pulse/springbutton], and it is built
+// today is [github.com/vibrantgio/effects/springbutton], and it is built
 // on spring directly rather than on Apply.
 //
 // # The defaults do not line up
@@ -49,7 +49,7 @@
 //
 // [Options.Spring] falls back to [DefaultSpring] only when the whole
 // struct is zero, but since FX.2 that distinction has no teeth:
-// [github.com/vibrantgio/pulse/spring]'s own defaults are the same
+// [github.com/vibrantgio/effects/spring]'s own defaults are the same
 // SpringDefault values (Stiffness 80, Mass 1), and a zero Damping
 // derives critical damping 2·√(k·m) from the resolved fields. A
 // partial override — Spring: spring.Options{Stiffness: 200} — is
@@ -66,8 +66,8 @@ import (
 	"gioui.org/op"
 	"gioui.org/op/paint"
 
-	"github.com/vibrantgio/pulse/spring"
-	"github.com/vibrantgio/pulse/tween"
+	"github.com/vibrantgio/effects/spring"
+	"github.com/vibrantgio/effects/tween"
 	"github.com/vibrantgio/theme/tokens"
 )
 

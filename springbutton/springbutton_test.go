@@ -11,8 +11,8 @@ import (
 
 	"github.com/reactivego/rx"
 	"github.com/vibrantgio/components/button"
-	"github.com/vibrantgio/pulse/spring"
-	"github.com/vibrantgio/pulse/springbutton"
+	"github.com/vibrantgio/effects/spring"
+	"github.com/vibrantgio/effects/springbutton"
 	"github.com/vibrantgio/theme/theme"
 )
 

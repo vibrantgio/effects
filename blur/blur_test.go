@@ -7,7 +7,7 @@ import (
 	"math/rand"
 	"testing"
 
-	"github.com/vibrantgio/pulse/blur"
+	"github.com/vibrantgio/effects/blur"
 )
 
 // noiseImage returns a w×h image of seeded uniform random noise in all

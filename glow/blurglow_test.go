@@ -21,8 +21,8 @@ import (
 	"gioui.org/op/paint"
 
 	"github.com/vibrantgio/components/golden"
-	"github.com/vibrantgio/pulse/blur"
-	glow "github.com/vibrantgio/pulse/glow"
+	"github.com/vibrantgio/effects/blur"
+	glow "github.com/vibrantgio/effects/glow"
 )
 
 // blurglowDump, when set to a directory, makes the falloff-comparison
@@ -37,7 +37,7 @@ func blurSigma(radius int) float64 { return float64(radius) / 2 }
 
 // rasterHaloShape fills the halo shape — the bounds rectangle at peak
 // alpha — into dst. The colour planes are filled with the halo colour
-// over the WHOLE canvas, not just the shape: pulse/blur blurs straight-
+// over the WHOLE canvas, not just the shape: effects/blur blurs straight-
 // alpha channels independently (its documented translucency caveat),
 // so blurring a coloured shape over transparent black would bleed
 // black into the halo and dim it to roughly alpha². Keeping the colour

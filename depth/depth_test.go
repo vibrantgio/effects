@@ -10,7 +10,7 @@ import (
 	"gioui.org/op/paint"
 
 	"github.com/vibrantgio/components/golden"
-	depth "github.com/vibrantgio/pulse/depth"
+	depth "github.com/vibrantgio/effects/depth"
 	"github.com/vibrantgio/theme/tokens"
 )
 

@@ -60,7 +60,7 @@
 // # Why not a real blur (E4.4 evaluation)
 //
 // A blur-based glow was prototyped against this package: rasterize
-// the shape at peak alpha, Gaussian-blur it with pulse/blur at
+// the shape at peak alpha, Gaussian-blur it with effects/blur at
 // sigma = Radius/2 (so both falloffs reach zero at Radius), and paint
 // the result as an image. The prototype, the falloff-comparison test
 // and the benchmarks live in blurglow_test.go; it deliberately does
@@ -96,7 +96,7 @@
 // glows worth having animate — Radius or Intensity driven by a spring
 // — and a cache keyed on shape parameters (size, radius, colour,
 // intensity) misses every frame by construction while the parameters
-// move. (pulse/blur.Cache does not offer that keying anyway: it keys
+// move. (effects/blur.Cache does not offer that keying anyway: it keys
 // on source-image identity.) An animating blur-glow therefore costs
 // 0.2–0.8 ms of events-thread CPU plus an image-sized allocation and
 // a texture upload per glow per frame, against the gradient path's
@@ -104,7 +104,7 @@
 // G-E4 rule that a correct approximation beats a slow exact answer,
 // the gradient path stays.
 //
-// Two findings for whoever revisits this. pulse/blur blurs
+// Two findings for whoever revisits this. effects/blur blurs
 // straight-alpha channels independently (its documented translucency
 // caveat), so a blur-glow must keep the colour planes uniform across
 // the whole canvas and let alpha alone carry the shape — blurring a

@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/vibrantgio/pulse/transition"
+	"github.com/vibrantgio/effects/transition"
 	"github.com/vibrantgio/theme/tokens"
 )
 

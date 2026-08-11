@@ -1,5 +1,5 @@
 // Package spring provides physics-based motion for animating a scalar
-// value toward a target. It is the Pulse layer's bridge to the traer
+// value toward a target. It is the Effects layer's bridge to the traer
 // particle system: every Spring owns a tiny [traer.ParticleSystem]
 // containing one fixed anchor (at the target) and one free particle
 // (whose 1D position is the animated value), connected by a damped
@@ -8,7 +8,7 @@
 // Reach for spring when motion needs to feel physical: button presses,
 // list reveals, focus rings, drag inertia. For non-physical motion —
 // fades, slides, simple colour interpolation —
-// [github.com/vibrantgio/pulse/tween] is cheaper and more predictable.
+// [github.com/vibrantgio/effects/tween] is cheaper and more predictable.
 //
 // # The zero Options is a usable default
 //

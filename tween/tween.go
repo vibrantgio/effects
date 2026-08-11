@@ -9,9 +9,9 @@
 // millisecond age, which works precisely because the unit is never
 // interpreted here.
 //
-// Pulse uses Tween for motion that is cheap, predictable, and where
+// Effects uses Tween for motion that is cheap, predictable, and where
 // physical realism is not the goal. Reach for
-// [github.com/vibrantgio/pulse/spring] when the motion needs to feel
+// [github.com/vibrantgio/effects/spring] when the motion needs to feel
 // physical.
 //
 // # Two ways to get nothing back

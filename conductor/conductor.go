@@ -18,7 +18,7 @@
 // Each participant has an offset (in frames): how many conductor
 // frames after the start the participant should begin animating.
 // [Conductor.Local] returns max(0, frame − offset) — the participant's
-// local frame for indexing a [github.com/vibrantgio/pulse/tween.Tween]
+// local frame for indexing a [github.com/vibrantgio/effects/tween.Tween]
 // or any other frame-indexed value.
 //
 //	cond := conductor.New()
@@ -66,7 +66,7 @@ func (c *Conductor) Frame() int { return c.frame }
 // offset. Conductor frames before offset return 0 — the participant
 // has not yet started; conductor frames at or beyond offset return
 // frame − offset, the participant's local frame for indexing a
-// frame-indexed primitive such as [github.com/vibrantgio/pulse/tween.Tween.At].
+// frame-indexed primitive such as [github.com/vibrantgio/effects/tween.Tween.At].
 func (c *Conductor) Local(offset int) int {
 	if c.frame < offset {
 		return 0

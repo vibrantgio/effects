@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/vibrantgio/components/golden"
-	"github.com/vibrantgio/pulse/transition"
+	"github.com/vibrantgio/effects/transition"
 	"github.com/vibrantgio/theme/tokens"
 )
 

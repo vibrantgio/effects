@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/vibrantgio/pulse/spring"
+	"github.com/vibrantgio/effects/spring"
 )
 
 // criticalDamping returns 2·√(k·m), the damping coefficient at which

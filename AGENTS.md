@@ -1,4 +1,4 @@
-# AGENTS.md — pulse
+# AGENTS.md — effects
 
 The effects layer of the Vibrant Gio design system: the `tween` and
 `spring` interpolators, `conductor`'s shared animation clock, `glow` and
@@ -9,10 +9,10 @@ tokens so a light-to-dark flip cross-fades instead of snapping, and `blur`,
 a CPU Gaussian approximation over `image.NRGBA` for the backdrop-blur
 pipeline Gio itself has no primitive for.
 
-**Layer.** Tier 3 of ADR-001's stack, `mvu → theme → components → pulse →
+**Layer.** Tier 3 of ADR-001's stack, `mvu → theme → components → effects →
 cadence → markdown`. The prism-pulse cycle that once pinned half the
 organization to `prism v0.0.3` is cut, in both directions: components' root
-module does not require pulse — only its exempt `gallery` demo does — and
+module does not require effects — only its exempt `gallery` demo does — and
 the `spectrum/transition` alias that carried the other half went with
 spectrum v0.2.0. Its root module imports `components`, `mvu`, `theme` and
 `traer`, and reaches `font` through them. Imported by `cadence`. Outside
@@ -30,7 +30,7 @@ and this file links it rather than copying it:
 
     https://raw.githubusercontent.com/vibrantgio/.github/master/llms.txt
 
-**Module.** `github.com/vibrantgio/pulse`, one module at the repository
+**Module.** `github.com/vibrantgio/effects`, one module at the repository
 root.
 
 **Build and test.** From the repository root:
@@ -63,10 +63,10 @@ runner has no GL driver for it to open — so the pixels and the build status
 are independent facts. The `build` job's *Were the golden images compared,
 or skipped?* step, added by F5.4, publishes which of the two happened as a
 workflow annotation, readable without a token at `GET
-/repos/vibrantgio/pulse/commits/<sha>/check-runs`; it has answered SKIPPED
-on every run. F5.7 then measured the alternative rather than leaving it as
-an open question. Adding the drivers gio's own Linux CI installs —
-`libegl1`, `libegl-mesa0`, `libglx-mesa0`, `libgl1-mesa-dri`,
+/repos/vibrantgio/effects/commits/<sha>/check-runs`; it has answered
+SKIPPED on every run. F5.7 then measured the alternative rather than
+leaving it as an open question. Adding the drivers gio's own Linux CI
+installs — `libegl1`, `libegl-mesa0`, `libglx-mesa0`, `libgl1-mesa-dri`,
 `mesa-libgallium`, `libgbm1`, `mesa-vulkan-drivers` — does work: on pulse
 the verdict flipped to COMPARED on the next run. Nine of that repository's
 twenty-one images then failed, 12782 pixels apart, while the three drawn on

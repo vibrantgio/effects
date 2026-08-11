@@ -1,7 +1,7 @@
 // Package transition interpolates a whole set of colour tokens, so a
 // light-to-dark flip can cross-fade instead of snapping.
 //
-// It is one bridge and nothing else. [github.com/vibrantgio/pulse/tween]
+// It is one bridge and nothing else. [github.com/vibrantgio/effects/tween]
 // owns the generic Tween[T] machinery and the per-channel LerpNRGBA
 // primitive; this package supplies the two pieces that teach it the
 // theme theme contract — [LerpColorTokens], which lerps every field of
@@ -27,7 +27,7 @@
 package transition
 
 import (
-	"github.com/vibrantgio/pulse/tween"
+	"github.com/vibrantgio/effects/tween"
 	"github.com/vibrantgio/theme/tokens"
 )
 

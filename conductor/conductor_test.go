@@ -3,8 +3,8 @@ package conductor_test
 import (
 	"testing"
 
-	"github.com/vibrantgio/pulse/conductor"
-	"github.com/vibrantgio/pulse/tween"
+	"github.com/vibrantgio/effects/conductor"
+	"github.com/vibrantgio/effects/tween"
 )
 
 // TestStaggeredListRevealPhaseLocked is the G3.5 Measurable criterion:

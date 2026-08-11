@@ -39,7 +39,7 @@
 // A shadow is a soft black fringe around a "shadow rectangle" — the
 // caller's bounds shifted downward by half the elevation extent — to
 // approximate light from above. The geometry mirrors
-// [github.com/vibrantgio/pulse/glow.Halo] but with two differences:
+// [github.com/vibrantgio/effects/glow.Halo] but with two differences:
 //
 //   - The shadow rectangle's interior is filled at the peak alpha too,
 //     so the strip extending below bounds stays visible once the caller
@@ -188,7 +188,7 @@ func Shadow(gtx layout.Context, bounds image.Rectangle, level tokens.ElevationLe
 	// Corner tiles: a 45°-diagonal gradient whose outer stop sits half
 	// the extent past the inner one, so each corner meets the adjacent
 	// edge bands at matching alpha along both seams — the seam-free
-	// trick used by [pulse/glow.Halo], shifted by the rounding (the
+	// trick used by [effects/glow.Halo], shifted by the rounding (the
 	// inner stop moves radius/2 inside the square corner, which is
 	// exactly what keeps the seams continuous once the bands are
 	// shortened by radius).

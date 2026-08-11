@@ -3,13 +3,13 @@
 // springs back.
 //
 // It is a sibling of [github.com/vibrantgio/components/button.Button], not a
-// decorator over it. Pulse never animates components globally — a caller
+// decorator over it. Effects never animates components globally — a caller
 // picks the animated component by name, so the call site says what it
-// does and the dependency runs pulse → components and never back.
+// does and the dependency runs effects → components and never back.
 // SpringButton owns its own [widget.Clickable] and renders through
 // [github.com/vibrantgio/components/button.Render], the pure renderer, then
 // wraps the output in an [op.Affine] scale driven by a
-// [github.com/vibrantgio/pulse/spring.Spring]. The underlying button's
+// [github.com/vibrantgio/effects/spring.Spring]. The underlying button's
 // visual contract — the emphasis register; hover, focus, press,
 // disabled colours; 44 dp minimum hit target; semantic ops — is
 // preserved.
@@ -47,7 +47,7 @@
 // stuttering host it stretches out to match. Nothing here reads the
 // frame rate, and there is no option to supply it; a frame-rate-aware
 // step is a later refinement, shared with
-// [github.com/vibrantgio/pulse/conductor].
+// [github.com/vibrantgio/effects/conductor].
 //
 // # Fonts
 //
@@ -87,7 +87,7 @@ import (
 	"github.com/reactivego/rx"
 	"github.com/vibrantgio/components/button"
 	"github.com/vibrantgio/mvu"
-	"github.com/vibrantgio/pulse/spring"
+	"github.com/vibrantgio/effects/spring"
 	"github.com/vibrantgio/theme/theme"
 	"github.com/vibrantgio/theme/tokens"
 )
@@ -110,7 +110,7 @@ const (
 // The spring is ticked at this fixed inverse step. A constant matches
 // the DESIGN-recommended convention max(1, fps/30) at 60 Hz; under
 // frame-rate drift the animation drifts too. A frame-rate-aware
-// variant is a future refinement (cross-cutting with pulse/conductor).
+// variant is a future refinement (cross-cutting with effects/conductor).
 const invDt = 60.0
 
 // Options configures the spring physics layered on top of
@@ -118,7 +118,7 @@ const invDt = 60.0
 // Options{} produces the canonical SpringButton feel.
 type Options struct {
 	// Stiffness, Damping, Mass are the same spring parameters
-	// documented in [pulse/spring.Options]. Zero values are replaced
+	// documented in [effects/spring.Options]. Zero values are replaced
 	// with [DefaultStiffness], [DefaultDamping], [DefaultMass].
 	Stiffness float64
 	Damping   float64

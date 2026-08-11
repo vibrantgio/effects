@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vibrantgio/pulse/tween"
+	"github.com/vibrantgio/effects/tween"
 )
 
 // settlingFrameFloat returns the smallest frame index at which the tween's

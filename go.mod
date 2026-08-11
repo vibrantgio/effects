@@ -1,4 +1,4 @@
-module github.com/vibrantgio/pulse
+module github.com/vibrantgio/effects
 
 go 1.25.1
 
