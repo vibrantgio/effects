@@ -17,10 +17,10 @@ the `spectrum/transition` alias that carried the other half went with
 spectrum v0.2.0. Its root module imports `components`, `mvu`, `theme` and
 `traer`, and reaches `font` through them. Imported by `patterns`. Outside
 the tier table, also by the demo module `components/gallery` and the
-workbench applications `feeds`, `mindchat`, `vaultview` and `watchlist`.
-Both directions are measured rather than typed — `scripts/check-layers.sh
---edges` reports the graph and `scripts/sync-agents.sh` renders these
-sentences from it — so correcting them here changes nothing.
+workbench applications `feeds`, `mindchat` and `vaultview`. Both directions
+are measured rather than typed — `scripts/check-layers.sh --edges` reports
+the graph and `scripts/sync-agents.sh` renders these sentences from it — so
+correcting them here changes nothing.
 
 **Read the canonical guide before you write code against this module.** It is
 the organization's one agent guide — the module inventory with current tags,
