@@ -73,6 +73,12 @@ func LerpColorTokens(from, to tokens.ColorTokens, t float64) tokens.ColorTokens 
 		OnSuccess:   tween.LerpNRGBA(from.OnSuccess, to.OnSuccess, t),
 		Warning:     tween.LerpNRGBA(from.Warning, to.Warning, t),
 		OnWarning:   tween.LerpNRGBA(from.OnWarning, to.OnWarning, t),
+		// The inverse pair crosses the midpoint the other way round —
+		// each endpoint's inverse surface is the other endpoint's
+		// surface — so a light-to-dark sweep drags it through the same
+		// dull middle every other role passes through, and lands exact.
+		InverseSurface:   tween.LerpNRGBA(from.InverseSurface, to.InverseSurface, t),
+		OnInverseSurface: tween.LerpNRGBA(from.OnInverseSurface, to.OnInverseSurface, t),
 	}
 }
 
