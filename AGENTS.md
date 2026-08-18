@@ -11,16 +11,17 @@ pipeline Gio itself has no primitive for.
 
 **Layer.** Tier 3 of ADR-001's stack, `mvu → theme → components → effects →
 patterns → markdown`. The prism-pulse cycle that once pinned half the
-organization to `prism v0.0.3` is cut, in both directions: components' root
-module does not require effects — only its exempt `gallery` demo does — and
-the `spectrum/transition` alias that carried the other half went with
-spectrum v0.2.0. Its root module imports `components`, `mvu`, `theme` and
-`traer`, and reaches `font` through them. Imported by `patterns`. Outside
-the tier table, also by the demo module `components/gallery` and the
-workbench applications `feeds`, `mindchat` and `vaultview`. Both directions
-are measured rather than typed — `scripts/check-layers.sh --edges` reports
+organization to `prism v0.0.3` is cut, in both directions: ADR-001's tier
+rule forbids the edge that closed it from below — `check-layers.sh` fails
+the build on one — and the `spectrum/transition` alias that carried the
+other half went with spectrum v0.2.0. Its root module imports `components`,
+`mvu`, `theme` and `traer`, and reaches `font` through them. That direction
+is measured rather than typed — `scripts/check-layers.sh --edges` reports
 the graph and `scripts/sync-agents.sh` renders these sentences from it — so
-correcting them here changes nothing.
+correcting them here changes nothing. The other direction is measured too
+and deliberately not written down: the gate checks the graph both ways, but
+a public API's consumers are unknowable, so this file says what its module
+needs and never who needs it.
 
 **Read the canonical guide before you write code against this module.** It is
 the organization's one agent guide — the module inventory with current tags,
@@ -40,12 +41,12 @@ root.
 **Golden images.** Tests in four packages compare rendered output against
 PNGs committed under `testdata/golden/`. They render through
 `github.com/vibrantgio/components/golden`, which declares `-golden.update`
-and is shared with `design`, `markdown`, `patterns` and `workbench`. Do not
-inline a copy of it, and do not declare a second `-golden.update`: two
-registrations of one flag name in a single test binary panic in `flag.Bool`
-at init, before any test runs. When a change legitimately moves pixels,
-regenerate them within the same change, look at what came out, and say so
-in the commit. From the repository root:
+and is the organization's only golden harness. Do not inline a copy of it,
+and do not declare a second `-golden.update`: two registrations of one flag
+name in a single test binary panic in `flag.Bool` at init, before any test
+runs. When a change legitimately moves pixels, regenerate them within the
+same change, look at what came out, and say so in the commit. From the
+repository root:
 
     go test ./depth ./glow ./motion ./transition -golden.update
 
