@@ -279,16 +279,20 @@ func SpringButton(
 //
 // It exists because this package renders through button.Render, the PURE
 // renderer, and so has to reassemble by hand what button.Button assembles for
-// itself. That reassembly is where a field goes missing: Props.Emphasis was
-// added to prism and this package went on drawing every spring button filled,
-// because the literal here simply did not mention it. The fix is one line; the
-// guard is that this function is the one place the copy happens, and
-// springbutton_internal_test.go asserts by reflection that every field
-// RenderState and Props share arrives here — so the NEXT field added to the
-// pair fails a test instead of silently drawing wrong.
+// itself. That reassembly is where a field goes missing, twice now:
+// Props.Emphasis was added and this package went on drawing every spring
+// button filled, and Props.Ground was added and every spring button went on
+// resolving its ghost wash against the window ground however high the surface
+// hosting it was raised. Both times the literal here simply did not mention
+// the field. The fix is one line each; the guard is that this function is the
+// one place the copy happens, and springbutton_internal_test.go asserts by
+// reflection that every field RenderState and Props share arrives here — so
+// the NEXT field added to the pair fails a test instead of silently drawing
+// wrong.
 func renderState(props button.Props, interaction button.RenderState) button.RenderState {
 	s := interaction
 	s.Emphasis = props.Emphasis
+	s.Ground = props.Ground
 	return s
 }
 
