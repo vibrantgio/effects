@@ -86,8 +86,8 @@ import (
 
 	"github.com/reactivego/rx"
 	"github.com/vibrantgio/components/button"
-	"github.com/vibrantgio/mvu"
 	"github.com/vibrantgio/effects/spring"
+	"github.com/vibrantgio/mvu"
 	"github.com/vibrantgio/theme/theme"
 	"github.com/vibrantgio/theme/tokens"
 )
