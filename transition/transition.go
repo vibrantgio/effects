@@ -56,6 +56,7 @@ func LerpColorTokens(from, to tokens.ColorTokens, t float64) tokens.ColorTokens 
 			Error:     lerpRamp(from.Ramps.Error, to.Ramps.Error, t),
 			Success:   lerpRamp(from.Ramps.Success, to.Ramps.Success, t),
 			Warning:   lerpRamp(from.Ramps.Warning, to.Ramps.Warning, t),
+			Info:      lerpRamp(from.Ramps.Info, to.Ramps.Info, t),
 		},
 		Tertiary:    tween.LerpNRGBA(from.Tertiary, to.Tertiary, t),
 		OnTertiary:  tween.LerpNRGBA(from.OnTertiary, to.OnTertiary, t),
@@ -73,6 +74,8 @@ func LerpColorTokens(from, to tokens.ColorTokens, t float64) tokens.ColorTokens 
 		OnSuccess:   tween.LerpNRGBA(from.OnSuccess, to.OnSuccess, t),
 		Warning:     tween.LerpNRGBA(from.Warning, to.Warning, t),
 		OnWarning:   tween.LerpNRGBA(from.OnWarning, to.OnWarning, t),
+		Info:        tween.LerpNRGBA(from.Info, to.Info, t),
+		OnInfo:      tween.LerpNRGBA(from.OnInfo, to.OnInfo, t),
 		// The inverse pair crosses the midpoint the other way round —
 		// each endpoint's inverse surface is the other endpoint's
 		// surface — so a light-to-dark sweep drags it through the same
