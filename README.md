@@ -193,7 +193,7 @@ Read the canonical guide before writing code against this module — the module
 inventory with current tags, the application skeleton, MVU and rx semantics,
 typography, and the pitfalls that are not guessable:
 
-<https://raw.githubusercontent.com/vibrantgio/.github/master/llms.txt>
+<https://raw.githubusercontent.com/vibrantgio/workbench/master/llms.txt>
 
 [`AGENTS.md`](./AGENTS.md) in this repository has the build, test and
 golden-image commands. The golden line there is exact and both halves of it
