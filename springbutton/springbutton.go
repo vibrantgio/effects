@@ -293,6 +293,8 @@ func renderState(props button.Props, interaction button.RenderState) button.Rend
 	s := interaction
 	s.Emphasis = props.Emphasis
 	s.Ground = props.Ground
+	s.Fill = props.Fill
+	s.OnFill = props.OnFill
 	return s
 }
 

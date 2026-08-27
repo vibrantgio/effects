@@ -1,6 +1,7 @@
 package springbutton
 
 import (
+	"image/color"
 	"reflect"
 	"testing"
 
@@ -97,6 +98,11 @@ func setDistinctive(v reflect.Value) bool {
 		v.SetFloat(1)
 	case reflect.String:
 		v.SetString("x")
+	case reflect.Struct:
+		if v.Type() != reflect.TypeOf(color.NRGBA{}) {
+			return false
+		}
+		v.Set(reflect.ValueOf(color.NRGBA{R: 0x11, G: 0x22, B: 0x33, A: 0x44}))
 	default:
 		return false
 	}
