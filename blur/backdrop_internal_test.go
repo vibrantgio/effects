@@ -12,7 +12,7 @@ import (
 )
 
 // requireHeadless skips the test when headless GPU rendering is not
-// available on this platform, the same policy as the golden harness.
+// available on this platform.
 func requireHeadless(t testing.TB) {
 	t.Helper()
 	if !Available() {
@@ -235,10 +235,9 @@ func TestFallbackOp(t *testing.T) {
 }
 
 // Benchmarks of the assembled pipeline — record ops, headless render,
-// readback, blur — for a 1440×900 backdrop at each divisor of the
-// G-E4 table. The look is constant at sigma 8 (full-resolution
-// pixels); the divisor sets the render resolution, so the blur runs at
-// sigma 8/d exactly as in E4.1's blur-only benchmarks. ÷4 is what
+// readback, blur — for a 1440×900 backdrop at each divisor. The look
+// is constant at sigma 8 (full-resolution pixels); the divisor sets the
+// render resolution, so the blur runs at sigma 8/d. ÷4 is what
 // DefaultDivisor(8) picks on its own.
 func benchmarkBackdrop(b *testing.B, div int) {
 	requireHeadless(b)

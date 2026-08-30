@@ -1,18 +1,17 @@
 // Package blur implements a fast CPU Gaussian-blur approximation over
-// [image.NRGBA], built for the backdrop-blur pipeline (G-E4): Gio has
-// no blur primitive, so the backdrop is rendered offscreen, read back,
-// blurred here, and painted as an ImageOp.
+// [image.NRGBA] for the backdrop-blur pipeline: Gio has no blur
+// primitive, so the backdrop is rendered offscreen, read back, blurred
+// here, and painted as an ImageOp.
 //
 // # Method
 //
 // Three successive box blurs approximate a true Gaussian to within a
-// few percent — the same approach CSS implementations use — and a box
-// blur is separable into a horizontal and a vertical pass, each a
-// sliding-window running sum that costs O(1) per pixel regardless of
-// radius. The three box sizes for a given sigma come from the
-// canonical W3C/Kovesi boxesForGauss(sigma, 3) formula. Passes are
-// parallelised across [runtime.NumCPU] goroutines: rows are chunked
-// for the horizontal pass, columns for the vertical.
+// few percent, and a box blur is separable into a horizontal and a
+// vertical pass, each a sliding-window running sum that costs O(1) per
+// pixel regardless of radius. The three box sizes for a given sigma
+// come from the canonical W3C/Kovesi boxesForGauss(sigma, 3) formula.
+// Passes are parallelised across [runtime.NumCPU] goroutines: rows are
+// chunked for the horizontal pass, columns for the vertical.
 //
 // # Edges
 //
@@ -25,11 +24,10 @@
 // # Alpha
 //
 // NRGBA is non-premultiplied; the alpha channel is blurred exactly
-// like the colour channels. That is correct for the intended use —
-// backdrop readbacks are opaque — but it is not premultiplied-correct
-// for translucent sources, where colour would bleed from fully
-// transparent pixels. Premultiplied correctness for translucent
-// sources is out of scope.
+// like the colour channels. That is correct for opaque backdrop
+// readbacks but not premultiplied-correct for translucent sources,
+// where colour would bleed from fully transparent pixels.
+// Premultiplied correctness for translucent sources is out of scope.
 //
 // # Allocation
 //
@@ -45,30 +43,23 @@
 //
 // Blur-only cost of (*Blurrer).Gaussian and full [Backdrop] pipeline
 // cost — record ops, headless render, readback, blur — for a 1440×900
-// backdrop at each divisor, measured on the same ten-core Apple
-// Silicon machine (go test -bench, darwin/arm64). Sigma follows the
-// backdrop model: the look is σ=8 in full-resolution pixels, so the
-// blur runs at σ=8/divisor on the reduced pixels:
+// backdrop at each divisor, measured on a ten-core Apple Silicon
+// machine (go test -bench, darwin/arm64). Sigma follows the backdrop
+// model: the look is σ=8 in full-resolution pixels, so the blur runs
+// at σ=8/divisor on the reduced pixels:
 //
-//	÷1  1440×900  σ=8   blur  5.8  ms   pipeline 29.0 ms   (plan table 69.2 ms)
-//	÷2   720×450  σ=4   blur  1.8  ms   pipeline  8.1 ms   (plan table 12.9 ms)
-//	÷4   360×225  σ=2   blur  0.74 ms   pipeline  2.9 ms   (plan table  3.8 ms)
-//	÷8   180×112  σ=1   blur  0.35 ms   pipeline  1.1 ms   (plan table  1.6 ms)
+//	÷1  1440×900  σ=8   blur  5.8  ms   pipeline 29.0 ms
+//	÷2   720×450  σ=4   blur  1.8  ms   pipeline  8.1 ms
+//	÷4   360×225  σ=2   blur  0.74 ms   pipeline  2.9 ms
+//	÷8   180×112  σ=1   blur  0.35 ms   pipeline  1.1 ms
 //
 // Parallelism buys ~5× over the serial path at 1440×900; the smaller
-// sizes are increasingly barrier-bound, which is why they fall short
-// of linear scaling. At the working configuration (÷4) the blur
-// itself is ~4% of a 16.7 ms frame budget.
-//
-// The assembled pipeline (E4.3) comes in under the G-E4 plan table in
-// every row while scaling the same way — the table's caveats are what
-// the implementation pins down: the headless window and readback
-// buffer are reused across updates, the blur runs in place on the
-// readback, and no image-sized buffer is allocated in steady state. A
-// heavier layer barely moves the totals (a fresh full-resolution
-// texture upload per update adds ~0.5 ms at ÷1); synchronous GPU
-// readback dominates, which is why the resolution divisor is the lever
-// that matters.
+// sizes are increasingly barrier-bound and fall short of linear
+// scaling. At the working configuration (÷4) the blur itself is ~4% of
+// a 16.7 ms frame budget. A heavier layer barely moves the pipeline
+// totals (a fresh full-resolution texture upload per update adds
+// ~0.5 ms at ÷1); synchronous GPU readback dominates, which is why the
+// resolution divisor is the lever that matters.
 package blur
 
 import (
@@ -162,15 +153,12 @@ func (b *Blurrer) box(dst, src *image.NRGBA, radius int) {
 	})
 }
 
-// checkSizes panics unless dst and src cover rectangles of equal size.
 func checkSizes(dst, src *image.NRGBA) {
 	if dst.Rect.Dx() != src.Rect.Dx() || dst.Rect.Dy() != src.Rect.Dy() {
 		panic("blur: dst and src bounds sizes differ")
 	}
 }
 
-// copyImage copies src's pixels into dst row by row (strides and
-// origins may differ).
 func copyImage(dst, src *image.NRGBA) {
 	if dst == src {
 		return
@@ -187,8 +175,6 @@ func row(im *image.NRGBA, y int) []uint8 {
 	return im.Pix[off : off+im.Rect.Dx()*4 : off+im.Rect.Dx()*4]
 }
 
-// parallel splits [0, n) into runtime.NumCPU() contiguous chunks and
-// runs fn on each concurrently.
 func parallel(n int, fn func(lo, hi int)) {
 	workers := runtime.NumCPU()
 	if workers > n {
@@ -234,7 +220,6 @@ func invWindow(window uint32) uint64 {
 	return (1<<invShift)/uint64(window) + 1
 }
 
-// clamp clamps i to [0, n).
 func clamp(i, n int) int {
 	if i < 0 {
 		return 0

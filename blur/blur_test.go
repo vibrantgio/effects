@@ -255,10 +255,9 @@ func TestBlurrerInPlace(t *testing.T) {
 	}
 }
 
-// Benchmarks at the G-E4 pipeline table's resolutions. Sigma follows
-// the backdrop model — the radius lives in source pixels, so halving
-// the resolution halves sigma (σ=8 at ÷1). These time the blur alone;
-// the plan's table times render+readback+blur.
+// Benchmarks at the backdrop pipeline's resolutions. Sigma follows the
+// backdrop model — the radius lives in source pixels, so halving the
+// resolution halves sigma (σ=8 at ÷1). These time the blur alone.
 func benchmarkGaussian(b *testing.B, w, h int, sigma float64) {
 	src := noiseImage(w, h, 6)
 	dst := image.NewNRGBA(src.Rect)

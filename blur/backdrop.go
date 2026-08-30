@@ -13,7 +13,7 @@ import (
 	"gioui.org/op/paint"
 )
 
-// A Backdrop is the headless backdrop-blur pipeline (G-E4): it renders
+// A Backdrop is the headless backdrop-blur pipeline: it renders
 // a caller-supplied layer into an offscreen GPU window at a reduced
 // resolution, reads the pixels back, blurs them on the CPU, and serves
 // the result as a [paint.ImageOp] for the caller to paint stretched to
@@ -74,20 +74,13 @@ import (
 // # Alpha
 //
 // The window is cleared to transparent and [headless.Window.Screenshot]
-// fills the readback *image.RGBA with straight-alpha values (the
-// golden harness relies on the same behaviour), so viewing the buffer
-// as NRGBA for the blur is exact, not an approximation. The returned
+// fills the readback *image.RGBA with straight-alpha values, so viewing
+// the buffer as NRGBA for the blur is exact, not an approximation. The returned
 // ImageOp, however, wraps the buffer as *image.RGBA, which Gio treats
 // as premultiplied. For an opaque backdrop — a layer that paints its
 // background edge to edge, the intended use — the two conventions
 // coincide and everything is exact; a layer that leaves uncovered or
 // translucent pixels will see them composited slightly darker.
-//
-// # Naming
-//
-// The organization also has a repository named backdrop — the tier-0
-// solid-colour background widget, two functions and no state. This
-// type is unrelated: blur.Backdrop is the blurred-backdrop pipeline.
 type Backdrop struct {
 	win     *headless.Window
 	winSize image.Point // reduced size the window was allocated at

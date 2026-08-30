@@ -17,12 +17,11 @@ const maxEntries = 8
 
 // DefaultDivisor returns the downscale divisor [Cache.Image] and
 // [Backdrop.Update] use when no [WithDivisor] option is given: the
-// largest power of two no
-// greater than sigma/2, clamped to [1, 8]. A Gaussian blur of
+// largest power of two no greater than sigma/2, clamped to [1, 8]. A Gaussian blur of
 // standard deviation sigma destroys detail finer than roughly sigma
 // source pixels, so blurring at 1/divisor resolution loses nothing
 // visible while cutting the work by divisor². At sigma 8 the rule
-// picks ÷4, the working configuration of the G-E4 pipeline table.
+// picks ÷4, the working configuration of the backdrop pipeline.
 func DefaultDivisor(sigma float64) int {
 	d := 1
 	for d < 8 && sigma/2 >= float64(2*d) {
@@ -144,8 +143,7 @@ func (c *Cache) Image(src image.Image, sigma float64, opts ...Option) paint.Imag
 	return op
 }
 
-// render downscales src by d to size small, blurs it at reduced
-// sigma, and wraps the result in an ImageOp. Called with c.mu held.
+// render must be called with c.mu held.
 func (c *Cache) render(src image.Image, sigma float64, d int, small image.Point) paint.ImageOp {
 	c.blurs++
 	return paint.NewImageOp(c.renderNRGBA(src, sigma, d, small))
@@ -164,8 +162,8 @@ func (c *Cache) renderNRGBA(src image.Image, sigma float64, d int, small image.P
 	return tmp
 }
 
-// evict removes the least recently used entry. Called with c.mu held
-// and len(c.entries) > 0.
+// evict removes the least recently used entry. Must be called with
+// c.mu held and len(c.entries) > 0.
 func (c *Cache) evict() {
 	var (
 		oldest cacheKey
