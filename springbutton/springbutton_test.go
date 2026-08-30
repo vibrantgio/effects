@@ -62,9 +62,9 @@ func TestSpringButtonRendersWithoutPanic(t *testing.T) {
 // TestDefaultsProduceVisibleMotionWithin200ms is the calibration
 // guard: a typical button tap lasts ~150–200 ms. If the default spring
 // has not moved a visible fraction of the way toward [DefaultPressScale]
-// within 12 ticks at 60 Hz (200 ms), the side-by-side gallery demo
-// will look indistinguishable from a static button, defeating the
-// purpose of the variant.
+// within 12 ticks at 60 Hz (200 ms), the button looks
+// indistinguishable from a static one, defeating the purpose of the
+// variant.
 //
 // Visible fraction: at least 30 % of the 1.0 → 0.92 span must be
 // covered in 200 ms. This is a calibration threshold, not a precision
