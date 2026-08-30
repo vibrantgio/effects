@@ -4,7 +4,7 @@
 // It is one bridge and nothing else. [github.com/vibrantgio/effects/tween]
 // owns the generic Tween[T] machinery and the per-channel LerpNRGBA
 // primitive; this package supplies the two pieces that teach it the
-// theme theme contract — [LerpColorTokens], which lerps every field of
+// theme's token contract — [LerpColorTokens], which lerps every field of
 // a [tokens.ColorTokens] at a parameter in [0,1], and [ColorTokensTween],
 // which packages that as a Tween you sample with At.
 //
@@ -16,14 +16,8 @@
 // between two saturated tokens can pass through a duller midpoint than
 // either endpoint — acceptable for the near-greyscale background and
 // surface roles, more visible on Primary. And the tween only produces
-// values: nothing here drives it. Emitting the intermediate ColorTokens as
-// a theme, frame by frame, is the caller's job, which is why an
-// OS-driven appearance change through theme/system still snaps today.
-//
-// This package lived at github.com/vibrantgio/theme/transition; it
-// moved here because it is animation code — a foundation module should
-// not depend on the effects layer. The deprecated alias left behind at
-// the old path is gone as of spectrum v0.2.0; this is the only path.
+// values: nothing here drives it. Emitting the intermediate ColorTokens
+// as a theme, frame by frame, is the caller's job.
 package transition
 
 import (
@@ -31,8 +25,6 @@ import (
 	"github.com/vibrantgio/theme/tokens"
 )
 
-// lerpRamp interpolates each step of two [tokens.Ramp] values using
-// [tween.LerpNRGBA].
 func lerpRamp(from, to tokens.Ramp, t float64) tokens.Ramp {
 	var r tokens.Ramp
 	for i := range r {
@@ -44,8 +36,6 @@ func lerpRamp(from, to tokens.Ramp, t float64) tokens.Ramp {
 // LerpColorTokens interpolates each colour field of two
 // [tokens.ColorTokens] using [tween.LerpNRGBA] — every ramp and every
 // pinned base, so the result at t=0 and t=1 equals the endpoints exactly.
-// The five MD3-named alias fields it also carried are gone with spectrum
-// v0.2.0.
 func LerpColorTokens(from, to tokens.ColorTokens, t float64) tokens.ColorTokens {
 	return tokens.ColorTokens{
 		Ramps: tokens.RampSet{
@@ -86,8 +76,7 @@ func LerpColorTokens(from, to tokens.ColorTokens, t float64) tokens.ColorTokens 
 }
 
 // ColorTokensTween constructs a [tween.Tween] interpolating from a to b
-// over frames frames, using [LerpColorTokens]. This is the integration
-// bridge between the generic Tween and the theme theme contract.
+// over frames frames, using [LerpColorTokens].
 func ColorTokensTween(a, b tokens.ColorTokens, frames int) tween.Tween[tokens.ColorTokens] {
 	return tween.Tween[tokens.ColorTokens]{
 		From:   a,

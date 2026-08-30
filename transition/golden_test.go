@@ -11,9 +11,9 @@ import (
 	"github.com/vibrantgio/theme/tokens"
 )
 
-// TestThemeTransitionGolden discharges G2.3 Measurable: a golden test of a
-// transitioning theme at frame 0/15/30, with the tween settling to the
-// target colour tokens at frame 30.
+// TestThemeTransitionGolden is a golden test of a transitioning theme at
+// frame 0/15/30, with the tween settling to the target colour tokens at
+// frame 30.
 //
 // The swatch is painted directly with image/draw rather than through Gio.
 // This package is testing colour-value interpolation, not widget rendering;
@@ -41,9 +41,9 @@ func TestThemeTransitionGolden(t *testing.T) {
 		})
 	}
 
-	// "tween settles to target" — verify at the value level, not just the
-	// pixel level. Pixel goldens alone could miss a settling bug if the
-	// final lerp happens to round to visually identical bytes.
+	// Verify settling at the value level, not just the pixel level: pixel
+	// goldens alone could miss a settling bug if the final lerp happens to
+	// round to visually identical bytes.
 	if got := tw.At(frames); got != tokens.DefaultDark {
 		t.Errorf("tween did not settle to target at frame %d: got %+v, want DefaultDark", frames, got)
 	}

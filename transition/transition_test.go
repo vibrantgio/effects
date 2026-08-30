@@ -21,8 +21,8 @@ func TestLerpColorTokensEndpoints(t *testing.T) {
 
 // TestLerpColorTokensCoversEveryField proves LerpColorTokens interpolates
 // literally every colour leaf of tokens.ColorTokens — all forty-five ramp
-// steps, every pin and on-colour, the semantic layer, and the deprecated
-// aliases. It builds two token sets whose every leaf holds a distinct
+// steps, every pin and on-colour, and the semantic layer. It builds two
+// token sets whose every leaf holds a distinct
 // non-zero colour via reflection, then requires lerp at t=0 and t=1 to
 // reproduce each endpoint exactly: a field LerpColorTokens misses stays at
 // its zero value and is reported by path. Because the walk enumerates the
@@ -97,8 +97,8 @@ func diffLeaves(got, want reflect.Value) []string {
 }
 
 func TestColorTokensTweenSettlesAtTarget(t *testing.T) {
-	// The "tween settles to target" clause from G2.3 Measurable, asserted
-	// at the value-equality level (not just pixel equality).
+	// Settling to the target asserted at the value-equality level, not
+	// just pixel equality.
 	tw := transition.ColorTokensTween(tokens.DefaultLight, tokens.DefaultDark, 30)
 	if got := tw.At(30); got != tokens.DefaultDark {
 		t.Errorf("Tween.At(Frames) did not settle to target: got %+v, want %+v", got, tokens.DefaultDark)
