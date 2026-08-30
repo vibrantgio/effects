@@ -5,13 +5,11 @@
 //
 // # Why a shared clock
 //
-// DESIGN §"5. Frame-Driven Physics — Caveats" notes that two widgets
-// ticking their own ParticleSystem (or each maintaining their own
-// frame counter) will not produce a coordinated wave: even
-// bit-identical primitives diverge if they receive a different number
-// of ticks. For coordinated effects — a wave of staggered rows
-// revealing in lockstep, a synchronised cascade — participants must
-// share a clock. The Conductor *is* that clock.
+// Two widgets each maintaining their own frame counter will not
+// produce a coordinated wave: even bit-identical primitives diverge if
+// they receive a different number of ticks. Coordinated effects — a
+// wave of staggered rows revealing in lockstep, a synchronised cascade
+// — therefore require participants to share one clock.
 //
 // # Stagger pattern
 //
@@ -39,9 +37,9 @@
 //
 // # Threading
 //
-// A Conductor is not safe for concurrent use. Per DESIGN §"Threading
-// rules", animation state lives on the Gio frame thread; one
-// Conductor per coordinated group, ticked once per frame from layout.
+// A Conductor is not safe for concurrent use: animation state lives on
+// the Gio frame thread. Use one Conductor per coordinated group,
+// ticked once per frame from layout.
 package conductor
 
 // Conductor is a shared frame counter. The zero value is a valid

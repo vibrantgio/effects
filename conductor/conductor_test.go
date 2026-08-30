@@ -7,8 +7,8 @@ import (
 	"github.com/vibrantgio/effects/tween"
 )
 
-// TestStaggeredListRevealPhaseLocked is the G3.5 Measurable criterion:
-// "test demonstrates staggered list reveal across N rows phase-locked."
+// TestStaggeredListRevealPhaseLocked demonstrates a staggered list
+// reveal across N rows, phase-locked.
 //
 // Fixture: N rows, each running an identical opacity tween from 0 to 1
 // over D frames; row i has stagger offset i*S, so it begins emerging
