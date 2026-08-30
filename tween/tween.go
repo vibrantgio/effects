@@ -4,10 +4,8 @@
 // Tween is intentionally minimal: a value type with no internal state, no
 // easing, and no clock. Callers drive it by passing a frame index to
 // [Tween.At]. The frame index is whatever the caller chooses to use as
-// "time" — render-loop frames, real-time samples, or test fixtures.
-// patterns/toast counts Frames in milliseconds and feeds [Tween.At] a
-// millisecond age, which works precisely because the unit is never
-// interpreted here.
+// "time" — render-loop frames, real-time samples, milliseconds of age,
+// or test fixtures — because the unit is never interpreted here.
 //
 // Effects uses Tween for motion that is cheap, predictable, and where
 // physical realism is not the goal. Reach for

@@ -10,11 +10,9 @@ import (
 )
 
 // settlingFrameFloat returns the smallest frame index at which the tween's
-// value is within tolerance of the target. It is the central quantity
-// asserted by settling-time tests per DESIGN §"Testing — Physics
-// convergence tests": the simulation runs deterministically and the frame
-// at which the value enters the target tolerance band is the measured
-// settling time.
+// value is within tolerance of the target. The simulation runs
+// deterministically, so the frame at which the value enters the target
+// tolerance band is the measured settling time.
 //
 // max bounds the search; if the tween hasn't settled by frame max, we
 // return max+1 so the assertion fails with a clear "did not settle" signal
@@ -171,8 +169,8 @@ func TestTweenZeroFramesIsImmediate(t *testing.T) {
 
 // TestTweenNilLerpEndpointsSurvive pins the endpoint contract: At never
 // touches Lerp for n <= 0 or n >= Frames, so a Lerp-less tween returns
-// the exact endpoints there. This is precisely the blind spot that let
-// the nil-Lerp defect hide behind endpoint-only tests.
+// the exact endpoints there — which is why endpoint-only tests cannot
+// detect a missing Lerp.
 func TestTweenNilLerpEndpointsSurvive(t *testing.T) {
 	tw := tween.Tween[int]{From: 100, To: 200, Frames: 10}
 	for _, tc := range []struct {
@@ -187,9 +185,9 @@ func TestTweenNilLerpEndpointsSurvive(t *testing.T) {
 	}
 }
 
-// TestTweenNilLerpInteriorPanics asserts the chosen contract for a
-// missing Lerp: the first interior frame panics with a message naming
-// the field, instead of an anonymous nil function call.
+// TestTweenNilLerpInteriorPanics asserts the contract for a missing
+// Lerp: the first interior frame panics with a message naming the field,
+// instead of an anonymous nil function call.
 func TestTweenNilLerpInteriorPanics(t *testing.T) {
 	for _, n := range []int{1, 5, 9} {
 		func() {
