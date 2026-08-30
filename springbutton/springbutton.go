@@ -46,22 +46,20 @@
 // takes half the wall-clock time it takes on a 60 Hz one, and under a
 // stuttering host it stretches out to match. Nothing here reads the
 // frame rate, and there is no option to supply it; a frame-rate-aware
-// step is a later refinement, shared with
-// [github.com/vibrantgio/effects/conductor].
+// step would be a later refinement.
 //
 // # Fonts
 //
 // The label is shaped with the theme's cached shaper
-// (Typography.Shaper(), ADR-003: the theme owns the typeface) in the
-// LabelLarge role. That shaper is built once for the process and shared
-// by every component reading the same typography: theme's cache
-// lives behind the Typography value, so it survives the copy the map
-// function below makes of it (spectrum F5.1). It is not safe to use
-// from two goroutines — Gio lays the widget forest out on the one
-// goroutine that runs the event loop, which is what makes sharing it
-// correct. Props.Shaper is an explicit per-instance override
-// only; leave it nil in normal use. Since prism v0.2.0 the role's whole
-// text style — typeface, weight, size and line height — reaches
+// (Typography.Shaper()) in the LabelLarge role; the theme owns the
+// typeface. That shaper is built once for the process and shared by
+// every component reading the same typography: the cache lives behind
+// the Typography value, so it survives the copy the map function below
+// makes of it. It is not safe to use from two goroutines — Gio lays the
+// widget forest out on the one goroutine that runs the event loop,
+// which is what makes sharing it correct. Props.Shaper is an explicit
+// per-instance override only; leave it nil in normal use. The role's
+// whole text style — typeface, weight, size and line height — reaches
 // [github.com/vibrantgio/components/button.Render], as does the theme's
 // Density, so a spring button is glyph- and pixel-identical to the
 // static one at scale 1.
@@ -98,7 +96,7 @@ import (
 // 60 Hz frame rate. Stiffness 300 with Damping 22 (zeta ≈ 0.635) gives
 // a small overshoot for "pop" feel. Measured against settleTolerance,
 // each leg settles 25 frames after the pointer event — ~415 ms at
-// 60 Hz, not the ~250 ms this was tuned for.
+// 60 Hz.
 const (
 	DefaultStiffness  = 300.0
 	DefaultDamping    = 22.0
@@ -108,9 +106,8 @@ const (
 )
 
 // The spring is ticked at this fixed inverse step. A constant matches
-// the DESIGN-recommended convention max(1, fps/30) at 60 Hz; under
-// frame-rate drift the animation drifts too. A frame-rate-aware
-// variant is a future refinement (cross-cutting with effects/conductor).
+// the convention max(1, fps/30) at 60 Hz; under frame-rate drift the
+// animation drifts too.
 const invDt = 60.0
 
 // Options configures the spring physics layered on top of
@@ -161,8 +158,7 @@ func SpringButton(
 
 	// Flatten the nested theme observables into a concrete snapshot. The
 	// typography emission supplies both the LabelLarge text style and the
-	// theme's cached shaper (ADR-003: the theme owns the typeface),
-	// replacing the former Theme.Type source.
+	// theme's cached shaper; the theme owns the typeface.
 	resolved := rx.SwitchMap(th, func(t theme.Theme) rx.Observable[resolvedTokens] {
 		return rx.Map(
 			rx.CombineLatest5(t.Color, t.Typography, t.Spacing, t.Radius, t.Density),
@@ -279,16 +275,10 @@ func SpringButton(
 //
 // It exists because this package renders through button.Render, the PURE
 // renderer, and so has to reassemble by hand what button.Button assembles for
-// itself. That reassembly is where a field goes missing, twice now:
-// Props.Emphasis was added and this package went on drawing every spring
-// button filled, and Props.Ground was added and every spring button went on
-// resolving its ghost wash against the window ground however high the surface
-// hosting it was raised. Both times the literal here simply did not mention
-// the field. The fix is one line each; the guard is that this function is the
-// one place the copy happens, and springbutton_internal_test.go asserts by
-// reflection that every field RenderState and Props share arrives here — so
-// the NEXT field added to the pair fails a test instead of silently drawing
-// wrong.
+// itself. A field the literal below forgets is a silent mis-render, so this
+// function must stay the one place the copy happens:
+// springbutton_internal_test.go asserts by reflection that every field
+// RenderState and Props share arrives here.
 func renderState(props button.Props, interaction button.RenderState) button.RenderState {
 	s := interaction
 	s.Emphasis = props.Emphasis

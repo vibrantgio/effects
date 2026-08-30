@@ -8,18 +8,15 @@ import (
 	"github.com/vibrantgio/components/button"
 )
 
-// TestRenderStateForwardsEveryFieldPropsCarries is the guard that would have
-// caught the bug this file's renderState was extracted to fix.
+// TestRenderStateForwardsEveryFieldPropsCarries guards renderState's hand-copy.
 //
 // SpringButton renders through button.Render, the pure renderer, so it has to
 // assemble the button.RenderState that button.Button assembles for itself.
-// Anything components adds to BOTH button.Props and button.RenderState is a field
-// this package must copy across, and the failure mode is silence: components gained
-// Props.Emphasis, the literal here did not mention it, and every spring button
-// went on drawing filled with nothing red anywhere.
+// Any field present on BOTH button.Props and button.RenderState must be copied
+// across, and the failure mode is silence.
 //
-// So the test does not name Emphasis. It asks reflection which fields the two
-// structs share — by name AND type, which is what makes Props.Disabled
+// So the test names no field. It asks reflection which fields the two structs
+// share — by name AND type, which is what makes Props.Disabled
 // (rx.Observable[bool]) correctly not one of them — sets a distinctive
 // non-zero value on each, and requires all of them to arrive. Add a field to
 // the pair and forget to forward it and this test fails, whatever the field is
