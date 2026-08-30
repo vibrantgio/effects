@@ -33,8 +33,8 @@ var exceptions = []exception{
 
 // TestNoLiteralColors enforces the design-token rule: library source must
 // not hard-code colour values. Every colour a component paints comes from
-// theme/tokens (and, once D1.1 lands, theme/color) — a hex literal in
-// component code silently forks the palette.
+// the theme's tokens — a hex literal in component code silently forks the
+// palette.
 //
 // Like TestNoGofontImports, the check walks the entire repository from the
 // module root, including nested modules, skipping only .git/, testdata/,
@@ -61,10 +61,8 @@ var exceptions = []exception{
 // Any remaining hard-coded colour in library source must be allow-listed
 // in exceptions below with a reason, or migrated to a token.
 //
-// theme is exempt by not carrying this test: theme/tokens (and
-// theme/color once D1.1 creates it) is where literal colours
-// legitimately live. If this lint ever lands in theme, those two
-// packages are its allow-list.
+// The theme module is exempt by not carrying this test: its token
+// packages are where literal colours legitimately live.
 func TestNoLiteralColors(t *testing.T) {
 	root, err := repoRoot()
 	if err != nil {
