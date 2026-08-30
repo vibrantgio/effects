@@ -48,13 +48,12 @@
 // at Frames leaves the widget fractionally undersized.
 //
 // [Options.Spring] falls back to [DefaultSpring] only when the whole
-// struct is zero, but since FX.2 that distinction has no teeth:
+// struct is zero, but that distinction has no teeth:
 // [github.com/vibrantgio/effects/spring]'s own defaults are the same
 // SpringDefault values (Stiffness 80, Mass 1), and a zero Damping
 // derives critical damping 2·√(k·m) from the resolved fields. A
 // partial override — Spring: spring.Options{Stiffness: 200} — is
-// therefore a critically damped k=200 spring, not the ζ ≈ 0.02 ringer
-// it used to be.
+// therefore a critically damped k=200 spring.
 package motion
 
 import (
@@ -94,9 +93,9 @@ var Visible = State{Opacity: 1, Scale: 1}
 var Hidden = State{Opacity: 0, Scale: DefaultFromScale}
 
 // Defaults applied when a corresponding [Options] field is zero-valued.
-// Since E3.1 the timing defaults resolve from the theme motion tokens
-// ([tokens.Motion], the value every theme.Theme.Motion emits by default)
-// rather than from local constants.
+// Timing defaults resolve from the theme motion tokens ([tokens.Motion],
+// the value every theme.Theme.Motion emits by default), not from local
+// constants.
 const (
 	// DefaultFromScale is the scale a widget starts at on Enter (and
 	// returns to on Exit).
@@ -109,9 +108,7 @@ const (
 
 // DefaultFrames is the opacity-tween duration in frames: the motion
 // scale's slowest stop (DurXSlow, MD3 long2 = 500 ms) at the 60 Hz
-// reference rate — 30 frames, the same count as the constant it
-// replaced, because E3.1 pinned DurXSlow to the 500 ms this package
-// already animated over.
+// reference rate — 30 frames.
 var DefaultFrames = FramesAt(tokens.Motion.DurXSlow, defaultFPS)
 
 // FramesAt converts a [tokens.MotionScale] duration stop into a whole
@@ -153,11 +150,10 @@ type Options struct {
 
 	// Spring is the [spring.Options] for the scale animation. Only the
 	// wholly zero value is replaced with [DefaultSpring]; a partly
-	// filled value goes to [spring.New] as-is, whose own defaults have
-	// matched [DefaultSpring] since FX.2 (zero Stiffness/Mass fill with
-	// 80/1, zero Damping derives critical damping for the resolved
-	// values), so a partial override stays critically damped at the
-	// stiffness it names.
+	// filled value goes to [spring.New] as-is, whose own defaults match
+	// [DefaultSpring] (zero Stiffness/Mass fill with 80/1, zero Damping
+	// derives critical damping for the resolved values), so a partial
+	// override stays critically damped at the stiffness it names.
 	Spring spring.Options
 
 	// FromScale is the scale at the Hidden end of the animation. Zero
@@ -204,8 +200,7 @@ func NewEnter(opts Options) *Enter {
 }
 
 // Tick advances the animation by one simulation step. invDt mirrors
-// [spring.Spring.Tick]: the DESIGN-recommended frame loop convention is
-// max(1, fps/30).
+// [spring.Spring.Tick]: the frame-loop convention is max(1, fps/30).
 func (e *Enter) Tick(invDt float64) {
 	e.frame++
 	e.scale.Tick(invDt)
@@ -336,7 +331,6 @@ func Apply(gtx layout.Context, s State, w layout.Widget) layout.Dimensions {
 	return dims
 }
 
-// clampUnit clamps x to [0, 1] and converts to float32 for paint APIs.
 func clampUnit(x float64) float32 {
 	if x <= 0 {
 		return 0

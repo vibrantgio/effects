@@ -41,9 +41,9 @@ var (
 var shaper = tokens.DefaultTypography.DeterministicShaper()
 
 // renderBtn returns a layout.Widget for a button rendered with the
-// given colour tokens and visual state. Sharp-cornered, empty-label —
-// matches the determinism trick in components/button/button_test.go so the
-// motion-applied output stays bit-stable across GPU contexts.
+// given colour tokens and visual state. Sharp-cornered and
+// empty-labelled, so the motion-applied output stays bit-stable across
+// GPU contexts.
 func renderBtn(colors tokens.ColorTokens, s button.RenderState) layout.Widget {
 	sharp := tokens.RadiusScale{}
 	return button.Render(shaper, "", colors, tokens.Spacing, sharp, tokens.DefaultTypography.LabelLarge, tokens.Comfortable, s)
@@ -109,7 +109,7 @@ func runTransition(opts motion.Options, ticks int) (motion.State, motion.State) 
 	return tr.Out(), tr.In()
 }
 
-// ---- golden tests (the G3.4 Measurable) ----
+// ---- golden tests ----
 
 // TestEnterGoldens captures three milestones of the Enter animation:
 // start (frame 0, fully Hidden), mid (half-way through the opacity
