@@ -4,8 +4,8 @@
 // # An explicit effect, never a default
 //
 // A shadow is opt-in vibrancy, not something a component gets for
-// being raised. Per ADR-005, a raised surface on desktop reads as
-// raised by tint first and shadow second: it names its rung on
+// being raised. On desktop a raised surface reads as raised by tint
+// first and shadow second: it names its rung on
 // [tokens.ElevationScale] and paints the neutral-ramp colour that
 // (tokens.ColorTokens).SurfaceAt resolves — one fill, no shadow. A
 // shadow is right only for what floats and can leave: transient,
@@ -16,23 +16,9 @@
 //
 // The cost difference backs the rule. One [Shadow] call issues eight
 // [paint.LinearGradientOp] fills — four edge bands and four corner
-// tiles — plus one interior fill: nine paint operations per
-// shadow, every frame it is drawn. A surface step is a single
+// tiles — plus one interior fill: nine paint operations per shadow,
+// every frame it is drawn. A surface step is a single
 // [paint.FillShape].
-//
-// # Caller audit (E2.2)
-//
-// The organization's three callers, judged against that criterion:
-//
-//   - patterns/toast keeps its shadow: a toast floats over the content
-//     plane and leaves on its own, and on dark themes the shadow, not
-//     the fill, is what separates it.
-//   - workbench/mindchat's undo bar keeps its shadow: a transient bar
-//     floating over the chat surfaces, a toast by another name. (App
-//     code is not governed by this verdict; recorded as guidance.)
-//   - patterns/card's Elevated variant loses its shadow: a card is
-//     raised in place, so it becomes a level-2 surface fill. E2.3
-//     executes the migration.
 //
 // # Geometry
 //
@@ -55,19 +41,17 @@
 // level whose dp rounds to zero pixels at the current density — paints
 // nothing at all.
 //
-// # Rounding and opacity (FX.3)
+// # Rounding and opacity
 //
-// The two geometry traps E2.2 recorded are parameters now. The
-// interior fill is a [clip.RRect] at the caller's radius, so a caller
-// passing the same radius it rounds its foreground to no longer gets
-// square dark wedges showing through the rounded corners; the corner
-// tiles of the penumbra grow inward to cover the notch between the
-// rounded interior and the old square corner, keeping the alpha ramp
-// seam-free. And opacity scales the whole ramp, so a shadow that fades
-// with its surface — patterns/toast's — passes its fade alpha straight
-// through instead of wrapping the call in a [paint.PushOpacity] layer.
-// Radius 0 and opacity 1 reproduce the old square, full-strength
-// shadow exactly.
+// The interior fill is a [clip.RRect] at the caller's radius, so a
+// caller passing the same radius it rounds its foreground to does not
+// get square dark wedges showing through the rounded corners; the
+// corner tiles of the penumbra grow inward to cover the notch between
+// the rounded interior and the square corner, keeping the alpha ramp
+// seam-free. Opacity scales the whole ramp, so a shadow that fades
+// with its surface passes its fade alpha straight through instead of
+// wrapping the call in a [paint.PushOpacity] layer. Radius 0 and
+// opacity 1 give a square, full-strength shadow.
 //
 // # One thing a caller trips on
 //
@@ -187,11 +171,10 @@ func Shadow(gtx layout.Context, bounds image.Rectangle, level tokens.ElevationLe
 
 	// Corner tiles: a 45°-diagonal gradient whose outer stop sits half
 	// the extent past the inner one, so each corner meets the adjacent
-	// edge bands at matching alpha along both seams — the seam-free
-	// trick used by [effects/glow.Halo], shifted by the rounding (the
-	// inner stop moves radius/2 inside the square corner, which is
-	// exactly what keeps the seams continuous once the bands are
-	// shortened by radius).
+	// edge bands at matching alpha along both seams. The rounding
+	// shifts the inner stop radius/2 inside the square corner, which is
+	// what keeps the seams continuous once the bands are shortened by
+	// radius.
 	cornerTile(gtx, image.Pt(bMin.X, bMin.Y), -1, -1, rho, r, inner, outer)
 	cornerTile(gtx, image.Pt(bMax.X, bMin.Y), +1, -1, rho, r, inner, outer)
 	cornerTile(gtx, image.Pt(bMin.X, bMax.Y), -1, +1, rho, r, inner, outer)

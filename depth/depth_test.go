@@ -41,10 +41,9 @@ func scene(level tokens.ElevationLevel) layout.Widget {
 }
 
 // roundedScene mirrors scene but rounds both the shadow and the
-// foreground to the same radius — the shape every organizational
-// caller draws. The wedge defect FX.3 fixed was the square interior
-// fill showing through the foreground's rounded corners; only a
-// golden catches it.
+// foreground to the same radius. A square interior fill showing
+// through the foreground's rounded corners is a defect only a golden
+// catches.
 func roundedScene(level tokens.ElevationLevel, radius int, opacity float32) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
 		paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
@@ -59,9 +58,8 @@ func roundedScene(level tokens.ElevationLevel, radius int, opacity float32) layo
 
 // ---- tests ----
 
-// TestShadowGoldens exercises the G3.3b Measurable: golden-image tests
-// at every elevation level (level-0 through level-3 — the desktop ladder
-// tops out at 3 since spectrum v0.2.0 dropped levels 4 and 5).
+// TestShadowGoldens covers every elevation level: level-0 through
+// level-3, the top of the desktop ladder.
 func TestShadowGoldens(t *testing.T) {
 	cases := []struct {
 		name  string
@@ -79,11 +77,9 @@ func TestShadowGoldens(t *testing.T) {
 	}
 }
 
-// TestShadowRoundedGolden exercises the FX.3 fix: a rounded surface
-// over a shadow rounded to the same radius. Before the fix the
-// interior fill was a hard clip.Rect, and this scene showed its
-// square corners through the foreground's rounding as four dark
-// wedges — the exact pixels this golden pins.
+// TestShadowRoundedGolden pins a rounded surface over a shadow rounded
+// to the same radius: the interior fill must not show square corners
+// through the foreground's rounding as four dark wedges.
 func TestShadowRoundedGolden(t *testing.T) {
 	golden.Render(t, "level-3-rounded", canvasSize, roundedScene(tokens.Level3, 12, 1))
 }
