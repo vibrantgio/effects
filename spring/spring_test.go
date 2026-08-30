@@ -14,11 +14,10 @@ func criticalDamping(k, m float64) float64 {
 	return 2 * math.Sqrt(k*m)
 }
 
-// TestSpringSettlesWithinToleranceUnderFixedSeed is the milestone
-// G3.2 Measurable criterion: the spring settles within tolerance when
-// driven from deterministic initial conditions and parameters ("fixed
-// seed" — there is no RNG; the seed here is the parameter set and
-// frame schedule).
+// TestSpringSettlesWithinToleranceUnderFixedSeed asserts the spring
+// settles within tolerance when driven from deterministic initial
+// conditions and parameters ("fixed seed" — there is no RNG; the seed
+// here is the parameter set and frame schedule).
 //
 // The seed: critically-damped spring, k=20, m=1, c=2·√20; start=0,
 // target=1; 200 ticks at invDt=60 (a 60 Hz frame loop with dt=1/60 s,
@@ -189,13 +188,12 @@ func settleFrame(sp *spring.Spring, tol float64, limit int) int {
 	return -1
 }
 
-// TestZeroOptionsSettleFrame is the FX.2 headline: the zero Options is
-// a usable default. It resolves to tokens.Motion.SpringDefault's
-// values — k=80, m=1, critically damped — and a 0→1 spring reaches
-// Settled(0.005) at frame 68 with invDt=60 (~1.1 s at 60 Hz). The old
-// per-field defaults (k=0.4, c=0.7) took 873 frames. The simulation is
-// deterministic, so the frame count is asserted exactly: a change here
-// is a change to the default feel and should be deliberate.
+// TestZeroOptionsSettleFrame pins the zero Options as a usable default.
+// It resolves to tokens.Motion.SpringDefault's values — k=80, m=1,
+// critically damped — and a 0→1 spring reaches Settled(0.005) at frame
+// 68 with invDt=60 (~1.1 s at 60 Hz). The simulation is deterministic,
+// so the frame count is asserted exactly: a change here is a change to
+// the default feel and should be deliberate.
 func TestZeroOptionsSettleFrame(t *testing.T) {
 	sp := spring.New(0, 1, spring.Options{})
 	if got := settleFrame(sp, 0.005, 5000); got != 68 {
@@ -206,9 +204,7 @@ func TestZeroOptionsSettleFrame(t *testing.T) {
 // TestStiffnessOnlyMatchesZeroOptions locks the derived-damping
 // contract: Options{Stiffness: 80} alone must behave identically to
 // the zero Options (both resolve to k=80, m=1, c=2·√80), and both must
-// match the fully explicit spelling bit for bit. Before FX.2 the
-// one-field override inherited the soft per-field defaults and landed
-// at ζ ≈ 0.04, ringing for thousands of frames.
+// match the fully explicit spelling bit for bit.
 func TestStiffnessOnlyMatchesZeroOptions(t *testing.T) {
 	zero := spring.New(0, 1, spring.Options{})
 	oneField := spring.New(0, 1, spring.Options{Stiffness: 80})

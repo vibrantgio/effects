@@ -31,8 +31,7 @@
 // A Spring is stateful. It must be allocated once per subscription and
 // kept alive across emissions and frames; reconstructing it inside a
 // per-emission map function or a per-frame layout function would reset
-// the simulation every render. The canonical pattern — the same one
-// every components component uses for its interaction state — is to allocate
+// the simulation every render. The canonical pattern is to allocate
 // inside an rx.Defer closure:
 //
 //	rx.Defer(func() rx.Observable[layout.Widget] {
@@ -69,7 +68,7 @@ import (
 )
 
 // Default parameters are the values of theme's
-// tokens.Motion.SpringDefault preset (FX.2). They are hardcoded rather
+// tokens.Motion.SpringDefault preset. They are hardcoded rather
 // than imported: spring is a pure-physics package over traer, and the
 // design-token surface stays out of it. There is no DefaultDamping —
 // the default damping is a rule, not a number: a zero [Options.Damping]
