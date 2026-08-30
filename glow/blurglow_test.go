@@ -1,10 +1,9 @@
 package glow_test
 
-// E4.4 evaluation artifact: the blur-based glow prototype, its falloff
-// comparison against the shipped eight-gradient halo, and the cost
-// benchmarks behind the decision recorded in the package doc. The
-// prototype is test-only on purpose — the evaluation kept the gradient
-// path, so nothing here ships as API.
+// The blur-based glow prototype, its falloff comparison against the
+// shipped eight-gradient halo, and the cost benchmarks recorded in the
+// package doc. The prototype is test-only on purpose: nothing here
+// ships as API.
 
 import (
 	"flag"
@@ -67,7 +66,7 @@ func rasterHaloShape(dst *image.NRGBA, bounds image.Rectangle, opts glow.Options
 	}
 }
 
-// blurHalo is the E4.4 prototype pipeline for one frame: rasterize the
+// blurHalo is the prototype pipeline for one frame: rasterize the
 // shape, blur it in place, wrap it as a paint op. The NRGBA buffer is
 // caller-owned and reused across frames; the ImageOp conversion
 // (NewImageOp copies NRGBA into a fresh premultiplied RGBA) is part of
@@ -122,8 +121,8 @@ func cornerProfile(img *image.RGBA, bounds image.Rectangle, n int) []float64 {
 }
 
 // TestBlurGlowFalloffComparison renders the golden fixture through
-// both paths and quantifies the falloff differences the E4.4 decision
-// rests on (numbers recorded in the package doc):
+// both paths and quantifies the falloff differences recorded in the
+// package doc:
 //
 //   - inner edge: the gradient starts at peak alpha flush with bounds;
 //     the blur of a step edge starts at ~half, so the blur halo's

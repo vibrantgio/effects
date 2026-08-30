@@ -50,9 +50,9 @@ func bgOnly(gtx layout.Context) layout.Dimensions {
 
 // ---- tests ----
 
-// TestHaloGoldens exercises the G3.3a Measurable: golden-image tests at
-// four intensities. intensity-zero is the no-halo baseline (proves the
-// halo path is opt-in); the remaining three cover the spectrum.
+// TestHaloGoldens pins golden images at four intensities.
+// intensity-zero is the no-halo baseline, proving the halo path is
+// opt-in; the remaining three cover the spectrum.
 func TestHaloGoldens(t *testing.T) {
 	cases := []struct {
 		name      string
