@@ -1,0 +1,4 @@
+# Golden-image failure artifacts: written by a failing test beside the
+# golden it did not match, never a stored comparison. They must not be
+# committed — a stale one reads as a golden during a sweep.
+*.actual.png
