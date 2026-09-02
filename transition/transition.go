@@ -72,6 +72,7 @@ func LerpColorTokens(from, to tokens.ColorTokens, t float64) tokens.ColorTokens 
 		// dull middle every other role passes through, and lands exact.
 		InverseSurface:   tween.LerpNRGBA(from.InverseSurface, to.InverseSurface, t),
 		OnInverseSurface: tween.LerpNRGBA(from.OnInverseSurface, to.OnInverseSurface, t),
+		Highlight:        tween.LerpNRGBA(from.Highlight, to.Highlight, t),
 	}
 }
 
