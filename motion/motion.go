@@ -1,5 +1,5 @@
 // Package motion provides enter/exit/transition primitives for animating
-// widgets into, out of, and between visual states.
+// a layout.Widget into, out of, and between visual states.
 //
 // Each primitive composes [github.com/vibrantgio/effects/tween]
 // (deterministic, frame-indexed opacity) and
@@ -8,12 +8,12 @@
 // two run on independent timescales — opacity finishes at frame Frames,
 // scale settles when the spring's restoring force balances out.
 //
-// # Composition with widgets
+// # Composition with a layout.Widget
 //
 // [Apply] is the bridge from a [State] to a Gio [layout.Widget]. It
-// records the widget once (to obtain its layout footprint), then replays
+// records it once (to obtain its layout footprint), then replays
 // the recorded ops inside an [op.Affine] scale-around-centre transform
-// and a [paint.PushOpacity] layer. The widget is laid out exactly once;
+// and a [paint.PushOpacity] layer. It is laid out exactly once;
 // the visual transformation is purely a paint-time effect.
 //
 //	enter := motion.NewEnter(motion.Options{})
@@ -45,7 +45,7 @@
 // reach Settled(0.005) until frame 52 — scale is still 0.991 when the
 // fade ends. A caller looping until [Enter.Settled] therefore runs 22
 // frames past the visible end of the animation, and a caller that stops
-// at Frames leaves the widget fractionally undersized.
+// at Frames leaves the layout.Widget fractionally undersized.
 //
 // [Options.Spring] falls back to [DefaultSpring] only when the whole
 // struct is zero, but that distinction has no teeth:
@@ -70,7 +70,7 @@ import (
 	"github.com/vibrantgio/theme/tokens"
 )
 
-// State captures the visual transformation applied to a widget at one
+// State captures the visual transformation applied to a layout.Widget at one
 // instant of an animation. Both fields are normalised: Opacity in [0,1],
 // Scale as a multiplier (1.0 = identity).
 type State struct {
@@ -79,7 +79,7 @@ type State struct {
 	Opacity float64
 
 	// Scale factor: 1.0 = identity. Drives an [op.Affine] scale around
-	// the widget's centre in [Apply], so 0.85 shrinks the widget toward
+	// its centre in [Apply], so 0.85 shrinks the layout.Widget toward
 	// its midpoint without changing its layout footprint.
 	Scale float64
 }
@@ -97,7 +97,7 @@ var Hidden = State{Opacity: 0, Scale: DefaultFromScale}
 // the value every theme.Theme.Motion emits by default), not from local
 // constants.
 const (
-	// DefaultFromScale is the scale a widget starts at on Enter (and
+	// DefaultFromScale is the scale a layout.Widget starts at on Enter (and
 	// returns to on Exit).
 	DefaultFromScale = 0.85
 
@@ -182,7 +182,7 @@ func (o Options) springOpts() spring.Options {
 	return o.Spring
 }
 
-// Enter animates a widget from [Hidden] to [Visible]. Construct with
+// Enter animates a layout.Widget from [Hidden] to [Visible]. Construct with
 // [NewEnter], advance with [Enter.Tick], query with [Enter.State] or
 // [Enter.Settled].
 type Enter struct {
@@ -224,7 +224,7 @@ func (e *Enter) Settled(tol float64) bool {
 	return e.frame >= e.opacity.Frames && e.scale.Settled(tol)
 }
 
-// Exit animates a widget from [Visible] to [Hidden]. Mirrors [Enter].
+// Exit animates a layout.Widget from [Visible] to [Hidden]. Mirrors [Enter].
 type Exit struct {
 	opacity tween.Tween[float64]
 	scale   *spring.Spring
@@ -262,8 +262,8 @@ func (e *Exit) Settled(tol float64) bool {
 	return e.frame >= e.opacity.Frames && e.scale.Settled(tol)
 }
 
-// Transition cross-fades between two widgets — an outgoing widget that
-// runs an [Exit] and an incoming widget that runs an [Enter] in parallel,
+// Transition cross-fades between two layout.Widget values — an outgoing one
+// that runs an [Exit] and an incoming one that runs an [Enter] in parallel,
 // both ticked together.
 type Transition struct {
 	out *Exit
@@ -285,10 +285,10 @@ func (t *Transition) Tick(invDt float64) {
 	t.in.Tick(invDt)
 }
 
-// Out returns the outgoing widget's current state.
+// Out returns the outgoing layout.Widget's current state.
 func (t *Transition) Out() State { return t.out.State() }
 
-// In returns the incoming widget's current state.
+// In returns the incoming layout.Widget's current state.
 func (t *Transition) In() State { return t.in.State() }
 
 // Frame returns the current frame index (incremented once per
@@ -302,18 +302,18 @@ func (t *Transition) Settled(tol float64) bool {
 }
 
 // Apply renders w with the visual transformation s applied: an
-// [op.Affine] scale around the widget's centre and a [paint.PushOpacity]
+// [op.Affine] scale around w's centre and a [paint.PushOpacity]
 // layer. Returns w's natural layout dimensions (the visual scale does
-// not change the widget's footprint).
+// not change w's footprint).
 //
 // w is laid out exactly once: Apply records w into a macro to obtain
 // its dimensions, then replays the macro inside the transform/opacity
 // stack. Dimensions therefore stay stable across an animation, so
 // surrounding layout does not jitter.
 //
-// Apply does not short-circuit on Opacity == 0 — the widget is still
+// Apply does not short-circuit on Opacity == 0 — w is still
 // laid out and its ops are still recorded so the returned dimensions
-// remain the true widget footprint at every frame.
+// remain w's true footprint at every frame.
 func Apply(gtx layout.Context, s State, w layout.Widget) layout.Dimensions {
 	rec := op.Record(gtx.Ops)
 	dims := w(gtx)

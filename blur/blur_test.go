@@ -21,7 +21,7 @@ func noiseImage(w, h int, seed int64) *image.NRGBA {
 	return im
 }
 
-// referenceGaussian is the ground truth: a separable direct
+// referenceGaussian is the trusted answer: a separable direct
 // convolution with the true Gaussian kernel in float64, clamp-extend
 // at the edges (the same edge policy as the package under test, so any
 // difference is purely kernel shape).

@@ -298,7 +298,7 @@ func TestExitEndIsSettled(t *testing.T) {
 
 // TestApplyDimensionsStableAcrossOpacity asserts the dimensions
 // returned by Apply do not depend on the opacity value — even at
-// Opacity=0, the underlying widget is still laid out so the parent
+// Opacity=0, the underlying layout.Widget is still laid out so the parent
 // layout does not jitter mid-animation.
 func TestApplyDimensionsStableAcrossOpacity(t *testing.T) {
 	w := renderBtn(tokens.DefaultLight, button.RenderState{})

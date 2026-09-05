@@ -72,7 +72,7 @@ func TestRenderStateKeepsTheInteractionHalf(t *testing.T) {
 	for i := range st.NumField() {
 		f := st.Field(i)
 		if f.Type.Kind() != reflect.Bool {
-			continue // the register comes from Props; the other test owns it
+			continue // the emphasis comes from Props; the other test owns it
 		}
 		if !gv.Field(i).Bool() {
 			t.Errorf("renderState dropped the interaction field %s", f.Name)

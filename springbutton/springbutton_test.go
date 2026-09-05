@@ -17,7 +17,7 @@ import (
 )
 
 // TestSpringButtonObservableEmits is the construction smoke test: the
-// observable must emit a non-nil widget when subscribed against the
+// observable must emit a non-nil layout.Widget when subscribed against the
 // default theme. Catches wiring regressions in the rx pipeline.
 func TestSpringButtonObservableEmits(t *testing.T) {
 	w, err := springbutton.SpringButton(
@@ -29,7 +29,7 @@ func TestSpringButtonObservableEmits(t *testing.T) {
 		t.Fatalf("First() = %v", err)
 	}
 	if w == nil {
-		t.Fatal("SpringButton emitted nil widget")
+		t.Fatal("SpringButton emitted a nil layout.Widget")
 	}
 }
 

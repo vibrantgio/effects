@@ -5,7 +5,7 @@
 //
 // A shadow is opt-in vibrancy, not something a component gets for
 // being raised. On desktop a raised surface reads as raised by tint
-// first and shadow second: it names its rung on
+// first and shadow second: it names its level on
 // [tokens.ElevationScale] and paints the neutral-ramp colour that
 // (tokens.ColorTokens).SurfaceAt resolves — one fill, no shadow. A
 // shadow is right only for what floats and can leave: transient,

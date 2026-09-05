@@ -1,11 +1,11 @@
 // Package conductor provides a shared clock for coordinated animation
-// across widgets. Multiple participants — staggered list rows, paged
+// across components. Multiple participants — staggered list rows, paged
 // transitions, choreographed reveals — read from a single Conductor so
 // their relative phases remain deterministic.
 //
 // # Why a shared clock
 //
-// Two widgets each maintaining their own frame counter will not
+// Two components each maintaining their own frame counter will not
 // produce a coordinated wave: even bit-identical primitives diverge if
 // they receive a different number of ticks. Coordinated effects — a
 // wave of staggered rows revealing in lockstep, a synchronised cascade

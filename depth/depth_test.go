@@ -59,7 +59,7 @@ func roundedScene(level tokens.ElevationLevel, radius int, opacity float32) layo
 // ---- tests ----
 
 // TestShadowGoldens covers every elevation level: level-0 through
-// level-3, the top of the desktop ladder.
+// level-3, the top of the desktop elevation.
 func TestShadowGoldens(t *testing.T) {
 	cases := []struct {
 		name  string

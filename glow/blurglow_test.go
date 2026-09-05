@@ -36,7 +36,7 @@ func blurSigma(radius int) float64 { return float64(radius) / 2 }
 
 // rasterHaloShape fills the halo shape — the bounds rectangle at peak
 // alpha — into dst. The colour planes are filled with the halo colour
-// over the WHOLE canvas, not just the shape: effects/blur blurs straight-
+// over the WHOLE image, not just the shape: effects/blur blurs straight-
 // alpha channels independently (its documented translucency caveat),
 // so blurring a coloured shape over transparent black would bleed
 // black into the halo and dim it to roughly alpha². Keeping the colour
@@ -254,10 +254,10 @@ func benchmarkBlurHaloRaster(b *testing.B, bw, bh, radius int) {
 	}
 }
 
-// Button-sized glow: 100×40 shape, radius 16 (canvas 132×72).
+// Button-sized glow: 100×40 shape, radius 16 (image 132×72).
 func BenchmarkBlurHaloRaster132x72(b *testing.B) { benchmarkBlurHaloRaster(b, 100, 40, 16) }
 
-// Card-sized glow: 300×96 shape, radius 24 (canvas 348×144).
+// Card-sized glow: 300×96 shape, radius 24 (image 348×144).
 func BenchmarkBlurHaloRaster348x144(b *testing.B) { benchmarkBlurHaloRaster(b, 300, 96, 24) }
 
 // BenchmarkBlurHaloBackdrop132x72 is the general-shape variant of the
@@ -286,7 +286,7 @@ func BenchmarkBlurHaloBackdrop132x72(b *testing.B) {
 }
 
 // benchmarkAnimatedFrame is the end-to-end per-frame comparison: build
-// the scene's ops the way an animating widget would every frame and
+// the scene's ops the way an animating layout.Widget would every frame and
 // render them through a headless window. For the blur path that
 // includes raster + blur + NewImageOp + the texture upload of the
 // fresh image; for the gradient path just op recording. Headless

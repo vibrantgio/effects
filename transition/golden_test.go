@@ -16,7 +16,7 @@ import (
 // frame 30.
 //
 // The swatch is painted directly with image/draw rather than through Gio.
-// This package is testing colour-value interpolation, not widget rendering;
+// This package is testing colour-value interpolation, not component rendering;
 // the GPU layer would only add headless-render flake without exercising
 // anything new.
 func TestThemeTransitionGolden(t *testing.T) {

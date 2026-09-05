@@ -8,8 +8,8 @@ focused thing, the press that gives way under the pointer and springs back, the
 fade that carries a notification out, the frosted glass behind a dialog.
 
 Gio hands you `op/paint` and a frame callback. It has no shadow, no radial
-gradient, no blur, no animation clock and no notion of a spring — a widget that
-moves is a widget whose author wrote the interpolation, decided what "one
+gradient, no blur, no animation clock and no notion of a spring — a component
+that moves is one whose developer wrote the interpolation, decided what "one
 frame" means, and remembered to ask for the next frame. effects writes that once.
 The animation core is two flavours that answer to different problems. `tween`
 is a value type: from, to, frames, a lerp function, no clock and no state, for
@@ -64,13 +64,13 @@ github.com/reactivego/rx v0.3.0 and Go 1.25.1.
 | --- | --- |
 | `tween` | `Tween[T]{From, To, Frames, Lerp}` and `At(n)`. A value type with no clock, no easing and no state — the caller decides what a frame is. `LerpFloat64` and `LerpNRGBA` cover opacity, position and colour. |
 | `spring` | One scalar pulled toward a target by a damped spring, simulated as a two-particle `traer.ParticleSystem`. `SetTarget` retargets mid-flight without losing velocity; `Settled` says when to stop asking for frames. |
-| `motion` | `Enter`, `Exit` and `Transition`: a tween for opacity and a spring for scale, ticked together. `Apply` is the bridge to Gio — it lays a widget out once and replays it inside a scale-around-centre transform and an opacity layer, so the footprint never jitters. Defaults resolve from the token motion scale: `FramesAt` converts a duration stop at a frame rate, `SpringOptions` converts a `tokens.Spring` preset. |
+| `motion` | `Enter`, `Exit` and `Transition`: a tween for opacity and a spring for scale, ticked together. `Apply` is the bridge to Gio — it lays a `layout.Widget` out once and replays it inside a scale-around-centre transform and an opacity layer, so the footprint never jitters. Defaults resolve from the token motion scale: `FramesAt` converts a duration stop at a frame rate, `SpringOptions` converts a `tokens.Spring` preset. |
 | `springbutton` | `components/button` with a press that scales down and springs back, on the same props and the same visual contract — including `Props.Emphasis`, since it renders through the pure `button.Render` and has to copy across every field the two structs share. The one shipped variant. |
 | `transition` | Interpolates a whole `tokens.ColorTokens` set between two values, so a light-to-dark flip can cross-fade rather than snap. Moved here from spectrum in the G-B3 inversion; the `spectrum/transition` alias that forwarded here is deleted as of spectrum v0.2.0. |
 | `blur` | The blur Gio does not have: a parallel three-pass box approximation of a Gaussian (`Gaussian`, `Blurrer`), `Cache` for static imagery blurred once and reused, and `Backdrop` — the "blurred behind the dialog" pipeline on `gioui.org/gpu/headless`, with `FallbackOp` and `Available` for the platforms where headless rendering is not. |
 | `depth` | A Material-style cast shadow under a rectangle, composed from eight linear gradients, with extent and offset read from a `tokens.ElevationLevel`. Opt-in vibrancy per ADR-005: a shadow marks what floats and can leave — a toast, a popover, a menu — never what is raised in place, which reads as raised by its surface step alone. The E2.2 caller audit is recorded in the package doc. |
 | `glow` | A luminance halo around a rectangle, composed from eight linear gradients standing in for the radial gradient Gio does not expose. The E4.4 verdict — why an animated glow is gradients, not blur — is recorded in the package doc, with the measurements. |
-| `conductor` | A shared frame counter, so a staggered wave stays phase-locked. Independent per-widget simulations drift; participants reading `Local(offset)` off one clock do not. |
+| `conductor` | A shared frame counter, so a staggered wave stays phase-locked. Independent per-component simulations drift; participants reading `Local(offset)` off one clock do not. |
 
 ## Usage
 
@@ -121,7 +121,7 @@ tuned but does not add up; both are in the status section below.
 
 Driving a `spring` or a `motion` primitive yourself is the other half. The
 object is stateful, so it has to be allocated once per subscription — inside
-the `rx.Defer` closure, the same place a components widget keeps its
+the `rx.Defer` closure, the same place a components control keeps its
 `widget.Clickable` — and then ticked once per frame, asking for the next frame
 only while it is still moving:
 
@@ -241,9 +241,10 @@ estimated.
   all four. There is no opacity parameter, so a shadow that has to fade with
   its surface must be wrapped in a `paint.PushOpacity` layer, as
   `patterns/toast` does. And the black is not a token role, so the same shadow
-  that separates a toast on a light background barely registers on a dark
-  one. What changed around it is the role: elevation is now a tonal surface
-  ladder (`SurfaceAt`, ADR-005) and this package is the explicit opt-in for
+  that separates a toast on a light background barely registers a difference
+  on a dark one. What changed around it is the role: elevation is now a tonal
+  surface at every level (`SurfaceAt`, ADR-005) and this package is the
+  explicit opt-in for
   the surfaces that float, not the default way to raise anything.
 - **`glow` reserves no space and measures in pixels.** `Halo` draws outside
   the bounds it is given and returns nothing, so in a flex it spills over its
