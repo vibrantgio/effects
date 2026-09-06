@@ -75,12 +75,12 @@ github.com/reactivego/rx v0.3.0 and Go 1.25.1.
 ## Usage
 
 The two packages the design system leans on hardest are `depth` and `tween`,
-and both are one line inside a render function. `patterns/toast` uses both:
+and both are one line inside a render function. A column of toasts uses both:
 the cast shadow goes down first — a toast floats and can leave, exactly what
 ADR-005 reserves shadows for — and the surface is painted over it:
 
 ```go
-depth.Shadow(gtx, image.Rectangle{Max: image.Pt(w, h)}, tokens.Level3)
+depth.Shadow(gtx, image.Rectangle{Max: image.Pt(w, h)}, tokens.Level3, radius, alpha)
 ```
 
 The same toast fades out over the last stretch of its lifetime — the theme's
@@ -238,11 +238,10 @@ estimated.
   them.
 - **`depth` paints a hard rectangle in a fixed black.** The interior fill has
   square corners, so a foreground with rounded corners shows dark wedges at
-  all four. There is no opacity parameter, so a shadow that has to fade with
-  its surface must be wrapped in a `paint.PushOpacity` layer, as
-  `patterns/toast` does. And the black is not a token role, so the same shadow
-  that separates a toast on a light background barely registers a difference
-  on a dark one. What changed around it is the role: elevation is now a tonal
+  all four. Opacity is a parameter, so a shadow that has to fade with its
+  surface is given the alpha that surface is painting at, as a fading toast
+  is. And the black is not a token role, so the same shadow that separates a
+  toast on a light background barely registers a difference on a dark one. What changed around it is the role: elevation is now a tonal
   surface at every level (`SurfaceAt`, ADR-005) and this package is the
   explicit opt-in for
   the surfaces that float, not the default way to raise anything.
