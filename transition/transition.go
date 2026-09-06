@@ -51,7 +51,7 @@ func LerpColorTokens(from, to tokens.ColorTokens, t float64) tokens.ColorTokens 
 		Tertiary:    tween.LerpNRGBA(from.Tertiary, to.Tertiary, t),
 		OnTertiary:  tween.LerpNRGBA(from.OnTertiary, to.OnTertiary, t),
 		Text:        tween.LerpNRGBA(from.Text, to.Text, t),
-		Divider:     tween.LerpNRGBA(from.Divider, to.Divider, t),
+		Seam:        tween.LerpNRGBA(from.Seam, to.Seam, t),
 		Background:  tween.LerpNRGBA(from.Background, to.Background, t),
 		Surface:     tween.LerpNRGBA(from.Surface, to.Surface, t),
 		Primary:     tween.LerpNRGBA(from.Primary, to.Primary, t),
