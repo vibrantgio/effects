@@ -15,14 +15,14 @@ import (
 )
 
 const (
-	canvasW, canvasH                       = 160, 100
+	frameW, frameH                         = 160, 100
 	boundsX0, boundsY0, boundsX1, boundsY1 = 50, 30, 110, 70
 )
 
 var (
 	bgColor    = color.NRGBA{R: 248, G: 248, B: 250, A: 255}
 	fgColor    = color.NRGBA{R: 60, G: 110, B: 200, A: 255}
-	canvasSize = image.Pt(canvasW, canvasH)
+	frameSize  = image.Pt(frameW, frameH)
 	boundsRect = image.Rect(boundsX0, boundsY0, boundsX1, boundsY1)
 )
 
@@ -72,7 +72,7 @@ func TestShadowGoldens(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			golden.Render(t, tc.name, canvasSize, scene(tc.level))
+			golden.Render(t, tc.name, frameSize, scene(tc.level))
 		})
 	}
 }
@@ -81,19 +81,19 @@ func TestShadowGoldens(t *testing.T) {
 // to the same radius: the interior fill must not show square corners
 // through the foreground's rounding as four dark wedges.
 func TestShadowRoundedGolden(t *testing.T) {
-	golden.Render(t, "level-3-rounded", canvasSize, roundedScene(tokens.Level3, 12, 1))
+	golden.Render(t, "level-3-rounded", frameSize, roundedScene(tokens.Level3, 12, 1))
 }
 
 // TestShadowOpacity asserts the opacity parameter scales the ramp:
 // 0 paints nothing at all, and a half-strength shadow differs from a
 // full-strength one.
 func TestShadowOpacity(t *testing.T) {
-	bg := golden.Capture(t, canvasSize, func(gtx layout.Context) layout.Dimensions {
+	bg := golden.Capture(t, frameSize, func(gtx layout.Context) layout.Dimensions {
 		paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
 		return layout.Dimensions{Size: gtx.Constraints.Max}
 	})
 	shadowAt := func(opacity float32) *image.RGBA {
-		return golden.Capture(t, canvasSize, func(gtx layout.Context) layout.Dimensions {
+		return golden.Capture(t, frameSize, func(gtx layout.Context) layout.Dimensions {
 			paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
 			depth.Shadow(gtx, boundsRect, tokens.Level3, 12, opacity)
 			return layout.Dimensions{Size: gtx.Constraints.Max}
@@ -122,7 +122,7 @@ func TestShadowAdjacentLevelsDiffer(t *testing.T) {
 	}
 	imgs := make([]*image.RGBA, len(levels))
 	for i, l := range levels {
-		imgs[i] = golden.Capture(t, canvasSize, scene(l))
+		imgs[i] = golden.Capture(t, frameSize, scene(l))
 	}
 	for i := 0; i < len(imgs)-1; i++ {
 		if n := golden.PixelDiff(imgs[i], imgs[i+1]); n == 0 {

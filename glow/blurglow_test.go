@@ -135,11 +135,11 @@ func cornerProfile(img *image.RGBA, bounds image.Rectangle, n int) []float64 {
 func TestBlurGlowFalloffComparison(t *testing.T) {
 	opts := glow.Options{Color: haloColor, Radius: haloRadius, Intensity: 1}
 
-	gradImg := golden.Capture(t, canvasSize, scene(haloBounds, opts))
-	buf := image.NewNRGBA(image.Rectangle{Max: canvasSize})
+	gradImg := golden.Capture(t, frameSize, scene(haloBounds, opts))
+	buf := image.NewNRGBA(image.Rectangle{Max: frameSize})
 	var blurrer blur.Blurrer
 	imgOp := blurHalo(buf, haloBounds, opts, &blurrer)
-	blurImg := golden.Capture(t, canvasSize, blurScene(imgOp, haloBounds))
+	blurImg := golden.Capture(t, frameSize, blurScene(imgOp, haloBounds))
 
 	const n = haloRadius + 5
 	gradEdge := edgeProfile(gradImg, haloBounds, n)
@@ -208,7 +208,7 @@ func dumpComparison(t *testing.T, gradImg, blurImg *image.RGBA) {
 	save("gradient-halo.png", gradImg)
 	save("blur-halo.png", blurImg)
 
-	big := image.Pt(3*canvasW, 3*canvasH)
+	big := image.Pt(3*frameW, 3*frameH)
 	bigBounds := image.Rect(3*boundsX0, 3*boundsY0, 3*boundsX1, 3*boundsY1)
 	bigOpts := glow.Options{Color: haloColor, Radius: 3 * haloRadius, Intensity: 1}
 	save("gradient-halo-3x.png", golden.Capture(t, big, scene(bigBounds, bigOpts)))
@@ -228,7 +228,7 @@ func dumpComparison(t *testing.T, gradImg, blurImg *image.RGBA) {
 // cost: recording eight gradient tiles into an op list.
 func BenchmarkGradientHaloOps(b *testing.B) {
 	var ops op.Ops
-	gtx := layout.Context{Constraints: layout.Exact(canvasSize), Ops: &ops}
+	gtx := layout.Context{Constraints: layout.Exact(frameSize), Ops: &ops}
 	opts := glow.Options{Color: haloColor, Radius: haloRadius, Intensity: 1}
 	b.ReportAllocs()
 	for b.Loop() {
@@ -243,10 +243,10 @@ func BenchmarkGradientHaloOps(b *testing.B) {
 // GPU texture upload each fresh ImageOp implies at draw time is on top
 // of this and not measured here.
 func benchmarkBlurHaloRaster(b *testing.B, bw, bh, radius int) {
-	canvas := image.Pt(bw+2*radius, bh+2*radius)
+	frame := image.Pt(bw+2*radius, bh+2*radius)
 	bounds := image.Rect(radius, radius, radius+bw, radius+bh)
 	opts := glow.Options{Color: haloColor, Radius: radius, Intensity: 1}
-	buf := image.NewNRGBA(image.Rectangle{Max: canvas})
+	buf := image.NewNRGBA(image.Rectangle{Max: frame})
 	var blurrer blur.Blurrer
 	b.ReportAllocs()
 	for b.Loop() {
@@ -269,7 +269,7 @@ func BenchmarkBlurHaloBackdrop132x72(b *testing.B) {
 	if !blur.Available() {
 		b.Skip("headless rendering not supported")
 	}
-	canvas := image.Pt(132, 72)
+	frame := image.Pt(132, 72)
 	bounds := image.Rect(16, 16, 116, 56)
 	inner := haloColor
 	layer := func(ops *op.Ops) {
@@ -279,7 +279,7 @@ func BenchmarkBlurHaloBackdrop132x72(b *testing.B) {
 	defer bd.Release()
 	b.ReportAllocs()
 	for b.Loop() {
-		if err := bd.Update(layer, canvas, blurSigma(16), blur.WithDivisor(1)); err != nil {
+		if err := bd.Update(layer, frame, blurSigma(16), blur.WithDivisor(1)); err != nil {
 			b.Fatal(err)
 		}
 	}
@@ -293,7 +293,7 @@ func BenchmarkBlurHaloBackdrop132x72(b *testing.B) {
 // Frame() timing stands in for the compositor's — same GPU work,
 // minus presentation.
 func benchmarkAnimatedFrame(b *testing.B, build func(ops *op.Ops)) {
-	w, err := headless.NewWindow(canvasW, canvasH)
+	w, err := headless.NewWindow(frameW, frameH)
 	if err != nil {
 		b.Skipf("headless rendering not supported: %v", err)
 	}
@@ -312,17 +312,17 @@ func benchmarkAnimatedFrame(b *testing.B, build func(ops *op.Ops)) {
 func BenchmarkGradientHaloAnimatedFrame(b *testing.B) {
 	opts := glow.Options{Color: haloColor, Radius: haloRadius, Intensity: 1}
 	benchmarkAnimatedFrame(b, func(ops *op.Ops) {
-		gtx := layout.Context{Constraints: layout.Exact(canvasSize), Ops: ops}
+		gtx := layout.Context{Constraints: layout.Exact(frameSize), Ops: ops}
 		scene(haloBounds, opts)(gtx)
 	})
 }
 
 func BenchmarkBlurHaloAnimatedFrame(b *testing.B) {
 	opts := glow.Options{Color: haloColor, Radius: haloRadius, Intensity: 1}
-	buf := image.NewNRGBA(image.Rectangle{Max: canvasSize})
+	buf := image.NewNRGBA(image.Rectangle{Max: frameSize})
 	var blurrer blur.Blurrer
 	benchmarkAnimatedFrame(b, func(ops *op.Ops) {
-		gtx := layout.Context{Constraints: layout.Exact(canvasSize), Ops: ops}
+		gtx := layout.Context{Constraints: layout.Exact(frameSize), Ops: ops}
 		blurScene(blurHalo(buf, haloBounds, opts, &blurrer), haloBounds)(gtx)
 	})
 }

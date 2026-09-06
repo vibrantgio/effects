@@ -16,7 +16,7 @@ import (
 // ---- test fixture geometry ----
 
 const (
-	canvasW, canvasH                       = 160, 100
+	frameW, frameH                         = 160, 100
 	boundsX0, boundsY0, boundsX1, boundsY1 = 50, 30, 110, 70
 	haloRadius                             = 16
 )
@@ -25,7 +25,7 @@ var (
 	bgColor    = color.NRGBA{R: 40, G: 40, B: 48, A: 255}
 	fgColor    = color.NRGBA{R: 0, G: 0, B: 0, A: 255}
 	haloColor  = color.NRGBA{R: 255, G: 255, B: 255, A: 255}
-	canvasSize = image.Pt(canvasW, canvasH)
+	frameSize  = image.Pt(frameW, frameH)
 	haloBounds = image.Rect(boundsX0, boundsY0, boundsX1, boundsY1)
 )
 
@@ -66,7 +66,7 @@ func TestHaloGoldens(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			opts := glow.Options{Color: haloColor, Radius: haloRadius, Intensity: tc.intensity}
-			golden.Render(t, tc.name, canvasSize, scene(haloBounds, opts))
+			golden.Render(t, tc.name, frameSize, scene(haloBounds, opts))
 		})
 	}
 }
@@ -78,7 +78,7 @@ func TestHaloGoldens(t *testing.T) {
 // the same byte sequence over time.
 func TestHaloIntensitySteppingDiffers(t *testing.T) {
 	cap := func(intensity float64) *image.RGBA {
-		return golden.Capture(t, canvasSize, scene(haloBounds, glow.Options{
+		return golden.Capture(t, frameSize, scene(haloBounds, glow.Options{
 			Color: haloColor, Radius: haloRadius, Intensity: intensity,
 		}))
 	}
@@ -104,14 +104,14 @@ func TestHaloIntensitySteppingDiffers(t *testing.T) {
 // even at maximum intensity. Guards against a regression where an edge
 // tile's clip rect grows by one pixel and bleeds into the foreground.
 func TestHaloDoesNotPaintInsideBounds(t *testing.T) {
-	withHalo := golden.Capture(t, canvasSize, func(gtx layout.Context) layout.Dimensions {
+	withHalo := golden.Capture(t, frameSize, func(gtx layout.Context) layout.Dimensions {
 		paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
 		glow.Halo(gtx, haloBounds, glow.Options{
 			Color: haloColor, Radius: haloRadius, Intensity: 1,
 		})
 		return layout.Dimensions{Size: gtx.Constraints.Max}
 	})
-	noHalo := golden.Capture(t, canvasSize, bgOnly)
+	noHalo := golden.Capture(t, frameSize, bgOnly)
 	for y := haloBounds.Min.Y; y < haloBounds.Max.Y; y++ {
 		for x := haloBounds.Min.X; x < haloBounds.Max.X; x++ {
 			off := y*withHalo.Stride + x*4
@@ -127,8 +127,8 @@ func TestHaloDoesNotPaintInsideBounds(t *testing.T) {
 
 // TestHaloNoOpAtZeroRadius asserts Halo with Radius=0 is a no-op.
 func TestHaloNoOpAtZeroRadius(t *testing.T) {
-	bg := golden.Capture(t, canvasSize, bgOnly)
-	zeroR := golden.Capture(t, canvasSize, func(gtx layout.Context) layout.Dimensions {
+	bg := golden.Capture(t, frameSize, bgOnly)
+	zeroR := golden.Capture(t, frameSize, func(gtx layout.Context) layout.Dimensions {
 		paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
 		glow.Halo(gtx, haloBounds, glow.Options{
 			Color: haloColor, Radius: 0, Intensity: 1,
@@ -142,8 +142,8 @@ func TestHaloNoOpAtZeroRadius(t *testing.T) {
 
 // TestHaloNoOpAtZeroIntensity asserts Halo with Intensity=0 is a no-op.
 func TestHaloNoOpAtZeroIntensity(t *testing.T) {
-	bg := golden.Capture(t, canvasSize, bgOnly)
-	zeroI := golden.Capture(t, canvasSize, func(gtx layout.Context) layout.Dimensions {
+	bg := golden.Capture(t, frameSize, bgOnly)
+	zeroI := golden.Capture(t, frameSize, func(gtx layout.Context) layout.Dimensions {
 		paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
 		glow.Halo(gtx, haloBounds, glow.Options{
 			Color: haloColor, Radius: haloRadius, Intensity: 0,
@@ -158,10 +158,10 @@ func TestHaloNoOpAtZeroIntensity(t *testing.T) {
 // TestHaloIntensityClamps asserts Intensity > 1 is clamped, not
 // extrapolated: Intensity=2 must render byte-identical to Intensity=1.
 func TestHaloIntensityClamps(t *testing.T) {
-	one := golden.Capture(t, canvasSize, scene(haloBounds, glow.Options{
+	one := golden.Capture(t, frameSize, scene(haloBounds, glow.Options{
 		Color: haloColor, Radius: haloRadius, Intensity: 1,
 	}))
-	two := golden.Capture(t, canvasSize, scene(haloBounds, glow.Options{
+	two := golden.Capture(t, frameSize, scene(haloBounds, glow.Options{
 		Color: haloColor, Radius: haloRadius, Intensity: 2,
 	}))
 	if n := golden.PixelDiff(one, two); n != 0 {
