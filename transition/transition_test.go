@@ -10,47 +10,46 @@ import (
 	"github.com/vibrantgio/theme/tokens"
 )
 
-func TestLerpColorTokensEndpoints(t *testing.T) {
-	if got := transition.LerpColorTokens(tokens.DefaultLight, tokens.DefaultDark, 0); got != tokens.DefaultLight {
-		t.Errorf("LerpColorTokens(_, _, 0) != DefaultLight")
+func TestLerpPlatformColorsEndpoints(t *testing.T) {
+	if got := transition.LerpPlatformColors(tokens.PlatformLight, tokens.PlatformDark, 0); got != tokens.PlatformLight {
+		t.Errorf("LerpPlatformColors(_, _, 0) != PlatformLight")
 	}
-	if got := transition.LerpColorTokens(tokens.DefaultLight, tokens.DefaultDark, 1); got != tokens.DefaultDark {
-		t.Errorf("LerpColorTokens(_, _, 1) != DefaultDark")
+	if got := transition.LerpPlatformColors(tokens.PlatformLight, tokens.PlatformDark, 1); got != tokens.PlatformDark {
+		t.Errorf("LerpPlatformColors(_, _, 1) != PlatformDark")
 	}
 }
 
-// TestLerpColorTokensCoversEveryField proves LerpColorTokens interpolates
-// literally every colour leaf of tokens.ColorTokens — all forty-five ramp
-// steps, every pin and on-colour, and the semantic layer. It builds two
-// token sets whose every leaf holds a distinct
-// non-zero colour via reflection, then requires lerp at t=0 and t=1 to
-// reproduce each endpoint exactly: a field LerpColorTokens misses stays at
-// its zero value and is reported by path. Because the walk enumerates the
-// struct via reflection, adding a field to ColorTokens without teaching
-// LerpColorTokens about it fails this test rather than silently snapping.
-func TestLerpColorTokensCoversEveryField(t *testing.T) {
-	var from, to tokens.ColorTokens
+// TestLerpPlatformColorsCoversEveryField proves LerpPlatformColors
+// interpolates literally every field of tokens.PlatformColors — every plane,
+// selection, label, control, system colour and measured material. It builds
+// two sets whose every field holds a distinct non-zero colour via reflection,
+// then requires the lerp at t=0 and t=1 to reproduce each endpoint exactly: a
+// field LerpPlatformColors misses stays at its zero value and is reported by
+// name. Because the walk enumerates the struct via reflection, adding a name
+// to the set without teaching this package about it fails here rather than
+// silently snapping one element while the rest of the window cross-fades.
+func TestLerpPlatformColorsCoversEveryField(t *testing.T) {
+	var from, to tokens.PlatformColors
 	n := uint32(1)
 	fillDistinct(t, reflect.ValueOf(&from).Elem(), &n)
 	fillDistinct(t, reflect.ValueOf(&to).Elem(), &n)
 
-	if got := transition.LerpColorTokens(from, to, 0); got != from {
-		t.Errorf("LerpColorTokens(from, to, 0) != from; unlerped fields: %v",
+	if got := transition.LerpPlatformColors(from, to, 0); got != from {
+		t.Errorf("LerpPlatformColors(from, to, 0) != from; unlerped fields: %v",
 			diffLeaves(reflect.ValueOf(got), reflect.ValueOf(from)))
 	}
-	if got := transition.LerpColorTokens(from, to, 1); got != to {
-		t.Errorf("LerpColorTokens(from, to, 1) != to; unlerped fields: %v",
+	if got := transition.LerpPlatformColors(from, to, 1); got != to {
+		t.Errorf("LerpPlatformColors(from, to, 1) != to; unlerped fields: %v",
 			diffLeaves(reflect.ValueOf(got), reflect.ValueOf(to)))
 	}
 }
 
 var nrgbaType = reflect.TypeOf(color.NRGBA{})
 
-// fillDistinct assigns a unique, fully opaque, non-zero NRGBA to every
-// colour leaf reachable from v, recursing through nested structs and
-// arrays (the RampSet and its Ramp arrays). Any leaf that is not a
-// color.NRGBA fails the test: a future non-colour field in ColorTokens
-// needs an explicit decision here and in LerpColorTokens.
+// fillDistinct assigns a unique, fully opaque, non-zero NRGBA to every colour
+// leaf reachable from v, recursing through nested structs and arrays. Any leaf
+// that is not a color.NRGBA fails the test: a future non-colour field in
+// PlatformColors needs an explicit decision here and in LerpPlatformColors.
 func fillDistinct(t *testing.T, v reflect.Value, n *uint32) {
 	t.Helper()
 	switch {
@@ -68,7 +67,7 @@ func fillDistinct(t *testing.T, v reflect.Value, n *uint32) {
 			fillDistinct(t, v.Index(i), n)
 		}
 	default:
-		t.Fatalf("ColorTokens carries a non-colour leaf of type %v; extend LerpColorTokens and this test", v.Type())
+		t.Fatalf("PlatformColors carries a non-colour leaf of type %v; extend LerpPlatformColors and this test", v.Type())
 	}
 }
 
@@ -92,15 +91,15 @@ func diffLeaves(got, want reflect.Value) []string {
 			}
 		}
 	}
-	walk("ColorTokens", got, want)
+	walk("PlatformColors", got, want)
 	return diffs
 }
 
-func TestColorTokensTweenSettlesAtTarget(t *testing.T) {
+func TestPlatformColorsTweenSettlesAtTarget(t *testing.T) {
 	// Settling to the target asserted at the value-equality level, not
 	// just pixel equality.
-	tw := transition.ColorTokensTween(tokens.DefaultLight, tokens.DefaultDark, 30)
-	if got := tw.At(30); got != tokens.DefaultDark {
-		t.Errorf("Tween.At(Frames) did not settle to target: got %+v, want %+v", got, tokens.DefaultDark)
+	tw := transition.PlatformColorsTween(tokens.PlatformLight, tokens.PlatformDark, 30)
+	if got := tw.At(30); got != tokens.PlatformDark {
+		t.Errorf("Tween.At(Frames) did not settle to target: got %+v, want %+v", got, tokens.PlatformDark)
 	}
 }

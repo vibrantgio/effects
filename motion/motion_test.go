@@ -44,7 +44,7 @@ var shaper = tokens.DefaultTypography.DeterministicShaper()
 // given colour tokens and visual state. Sharp-cornered and
 // empty-labelled, so the motion-applied output stays bit-stable across
 // GPU contexts.
-func renderBtn(colors tokens.ColorTokens, s button.RenderState) layout.Widget {
+func renderBtn(colors tokens.PlatformColors, s button.RenderState) layout.Widget {
 	sharp := tokens.RadiusScale{}
 	return button.Render(shaper, "", colors, tokens.Spacing, sharp, tokens.DefaultTypography.LabelLarge, tokens.Comfortable, s)
 }
@@ -52,7 +52,7 @@ func renderBtn(colors tokens.ColorTokens, s button.RenderState) layout.Widget {
 // scene composes a light backdrop and a motion-transformed button on
 // top. The light backdrop gives the dimming opacity and the scaled
 // edges unambiguous contrast for golden diffing.
-func scene(state motion.State, colors tokens.ColorTokens, btnState button.RenderState) layout.Widget {
+func scene(state motion.State, colors tokens.PlatformColors, btnState button.RenderState) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
 		paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
 		motion.Apply(gtx, state, renderBtn(colors, btnState))
@@ -64,7 +64,7 @@ func scene(state motion.State, colors tokens.ColorTokens, btnState button.Render
 // state, then the incoming button at in state. Both buttons render at
 // the same position so straight-alpha composition produces the
 // crossfade.
-func swapScene(out motion.State, outColors tokens.ColorTokens, in motion.State, inColors tokens.ColorTokens) layout.Widget {
+func swapScene(out motion.State, outColors tokens.PlatformColors, in motion.State, inColors tokens.PlatformColors) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
 		paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
 		motion.Apply(gtx, out, renderBtn(outColors, button.RenderState{}))
@@ -128,7 +128,7 @@ func TestEnterGoldens(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			s := runEnter(opts, tc.ticks)
-			golden.Render(t, tc.name, frameSize, scene(s, tokens.DefaultLight, button.RenderState{}))
+			golden.Render(t, tc.name, frameSize, scene(s, tokens.PlatformLight, button.RenderState{}))
 		})
 	}
 }
@@ -149,7 +149,7 @@ func TestExitGoldens(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			s := runExit(opts, tc.ticks)
-			golden.Render(t, tc.name, frameSize, scene(s, tokens.DefaultLight, button.RenderState{}))
+			golden.Render(t, tc.name, frameSize, scene(s, tokens.PlatformLight, button.RenderState{}))
 		})
 	}
 }
@@ -173,8 +173,8 @@ func TestSwapGoldens(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			out, in := runTransition(opts, tc.ticks)
 			golden.Render(t, tc.name, frameSize, swapScene(
-				out, tokens.DefaultLight,
-				in, tokens.DefaultDark,
+				out, tokens.PlatformLight,
+				in, tokens.PlatformDark,
 			))
 		})
 	}
@@ -189,7 +189,7 @@ func TestSwapGoldens(t *testing.T) {
 // short-circuit replaces the layer push).
 func TestEnterStartIsBackground(t *testing.T) {
 	bg := golden.Capture(t, frameSize, bgOnly)
-	startFrame := golden.Capture(t, frameSize, scene(motion.Hidden, tokens.DefaultLight, button.RenderState{}))
+	startFrame := golden.Capture(t, frameSize, scene(motion.Hidden, tokens.PlatformLight, button.RenderState{}))
 	if n := golden.PixelDiff(bg, startFrame); n != 0 {
 		t.Errorf("Enter start (Hidden state) should match background; %d pixels differ", n)
 	}
@@ -200,7 +200,7 @@ func TestEnterStartIsBackground(t *testing.T) {
 func TestExitEndIsBackground(t *testing.T) {
 	bg := golden.Capture(t, frameSize, bgOnly)
 	end := runExit(motion.Options{}, 2*motion.DefaultFrames)
-	endFrame := golden.Capture(t, frameSize, scene(end, tokens.DefaultLight, button.RenderState{}))
+	endFrame := golden.Capture(t, frameSize, scene(end, tokens.PlatformLight, button.RenderState{}))
 	if n := golden.PixelDiff(bg, endFrame); n != 0 {
 		t.Errorf("Exit end should match background; %d pixels differ (opacity=%v)", n, end.Opacity)
 	}
@@ -214,8 +214,8 @@ func TestExitEndIsBackground(t *testing.T) {
 func TestEnterEndDistinctFromStart(t *testing.T) {
 	startState := runEnter(motion.Options{}, 0)
 	endState := runEnter(motion.Options{}, 2*motion.DefaultFrames)
-	startImg := golden.Capture(t, frameSize, scene(startState, tokens.DefaultLight, button.RenderState{}))
-	endImg := golden.Capture(t, frameSize, scene(endState, tokens.DefaultLight, button.RenderState{}))
+	startImg := golden.Capture(t, frameSize, scene(startState, tokens.PlatformLight, button.RenderState{}))
+	endImg := golden.Capture(t, frameSize, scene(endState, tokens.PlatformLight, button.RenderState{}))
 	if n := golden.PixelDiff(startImg, endImg); n == 0 {
 		t.Error("Enter start and end render identically; expected the animation to change pixels")
 	}
@@ -224,8 +224,8 @@ func TestEnterEndDistinctFromStart(t *testing.T) {
 // TestExitEndDistinctFromStart mirrors TestEnterEndDistinctFromStart
 // for the Exit primitive.
 func TestExitEndDistinctFromStart(t *testing.T) {
-	startImg := golden.Capture(t, frameSize, scene(runExit(motion.Options{}, 0), tokens.DefaultLight, button.RenderState{}))
-	endImg := golden.Capture(t, frameSize, scene(runExit(motion.Options{}, 2*motion.DefaultFrames), tokens.DefaultLight, button.RenderState{}))
+	startImg := golden.Capture(t, frameSize, scene(runExit(motion.Options{}, 0), tokens.PlatformLight, button.RenderState{}))
+	endImg := golden.Capture(t, frameSize, scene(runExit(motion.Options{}, 2*motion.DefaultFrames), tokens.PlatformLight, button.RenderState{}))
 	if n := golden.PixelDiff(startImg, endImg); n == 0 {
 		t.Error("Exit start and end render identically; expected the animation to change pixels")
 	}
@@ -240,9 +240,9 @@ func TestSwapMidShowsBoth(t *testing.T) {
 	midOut, midIn := runTransition(motion.Options{}, motion.DefaultFrames/2)
 	endOut, endIn := runTransition(motion.Options{}, 2*motion.DefaultFrames)
 
-	startImg := golden.Capture(t, frameSize, swapScene(startOut, tokens.DefaultLight, startIn, tokens.DefaultDark))
-	midImg := golden.Capture(t, frameSize, swapScene(midOut, tokens.DefaultLight, midIn, tokens.DefaultDark))
-	endImg := golden.Capture(t, frameSize, swapScene(endOut, tokens.DefaultLight, endIn, tokens.DefaultDark))
+	startImg := golden.Capture(t, frameSize, swapScene(startOut, tokens.PlatformLight, startIn, tokens.PlatformDark))
+	midImg := golden.Capture(t, frameSize, swapScene(midOut, tokens.PlatformLight, midIn, tokens.PlatformDark))
+	endImg := golden.Capture(t, frameSize, swapScene(endOut, tokens.PlatformLight, endIn, tokens.PlatformDark))
 
 	if n := golden.PixelDiff(startImg, midImg); n == 0 {
 		t.Error("swap-mid renders identically to swap-start; expected the incoming side to begin contributing")
@@ -301,7 +301,7 @@ func TestExitEndIsSettled(t *testing.T) {
 // Opacity=0, the underlying layout.Widget is still laid out so the parent
 // layout does not jitter mid-animation.
 func TestApplyDimensionsStableAcrossOpacity(t *testing.T) {
-	w := renderBtn(tokens.DefaultLight, button.RenderState{})
+	w := renderBtn(tokens.PlatformLight, button.RenderState{})
 
 	measure := func(s motion.State) layout.Dimensions {
 		var ops op.Ops

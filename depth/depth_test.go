@@ -20,21 +20,27 @@ const (
 )
 
 var (
-	bgColor    = color.NRGBA{R: 248, G: 248, B: 250, A: 255}
 	fgColor    = color.NRGBA{R: 60, G: 110, B: 200, A: 255}
 	frameSize  = image.Pt(frameW, frameH)
 	boundsRect = image.Rect(boundsX0, boundsY0, boundsX1, boundsY1)
 )
 
-// scene composes a light backdrop, a cast shadow at the given level,
-// and a foreground rectangle drawn on top of the shadow. The light
-// backdrop gives the dark shadow unambiguous contrast for golden
-// diffing; the foreground rect anchors bounds so a missing or
-// mis-offset shadow is visually obvious.
-func scene(level tokens.ElevationLevel) layout.Widget {
+// faded returns the platform's floating shadow at a share of its own
+// coverage, which is how a surface that fades takes its shadow with it.
+func faded(p tokens.PlatformColors, share float32) color.NRGBA {
+	s := p.FloatingShadow
+	s.A = uint8(float32(s.A)*share + 0.5)
+	return s
+}
+
+// scene composes the window's own plane, a cast shadow, and a foreground
+// rectangle drawn on top of it. The plane is the platform's, so the shadow is
+// read where it is actually drawn; the foreground rect anchors bounds so a
+// missing or mis-placed shadow is visually obvious.
+func scene(p tokens.PlatformColors, shadow color.NRGBA) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
-		paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
-		depth.Shadow(gtx, boundsRect, level, 0, 1)
+		paint.FillShape(gtx.Ops, p.WindowBackground, clip.Rect{Max: gtx.Constraints.Max}.Op())
+		depth.Shadow(gtx, boundsRect, 0, shadow)
 		paint.FillShape(gtx.Ops, fgColor, clip.Rect(boundsRect).Op())
 		return layout.Dimensions{Size: gtx.Constraints.Max}
 	}
@@ -44,10 +50,10 @@ func scene(level tokens.ElevationLevel) layout.Widget {
 // foreground to the same radius. A square interior fill showing
 // through the foreground's rounded corners is a defect only a golden
 // catches.
-func roundedScene(level tokens.ElevationLevel, radius int, opacity float32) layout.Widget {
+func roundedScene(p tokens.PlatformColors, radius int, shadow color.NRGBA) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
-		paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
-		depth.Shadow(gtx, boundsRect, level, radius, opacity)
+		paint.FillShape(gtx.Ops, p.WindowBackground, clip.Rect{Max: gtx.Constraints.Max}.Op())
+		depth.Shadow(gtx, boundsRect, radius, shadow)
 		paint.FillShape(gtx.Ops, fgColor, clip.RRect{
 			Rect: boundsRect,
 			SE:   radius, SW: radius, NE: radius, NW: radius,
@@ -58,21 +64,22 @@ func roundedScene(level tokens.ElevationLevel, radius int, opacity float32) layo
 
 // ---- tests ----
 
-// TestShadowGoldens covers every elevation level: level-0 through
-// level-3, the top of the desktop elevation.
+// TestShadowGoldens pins the one shadow the platform draws, in both
+// appearances, and the same shadow half faded out — which is the whole of
+// what varies: a floating surface either casts the platform's shadow or is
+// on its way in or out.
 func TestShadowGoldens(t *testing.T) {
-	cases := []struct {
-		name  string
-		level tokens.ElevationLevel
+	for _, tc := range []struct {
+		name   string
+		colors tokens.PlatformColors
+		share  float32
 	}{
-		{"level-0", tokens.Level0},
-		{"level-1", tokens.Level1},
-		{"level-2", tokens.Level2},
-		{"level-3", tokens.Level3},
-	}
-	for _, tc := range cases {
+		{"floating-light", tokens.PlatformLight, 1},
+		{"floating-dark", tokens.PlatformDark, 1},
+		{"floating-light-half", tokens.PlatformLight, 0.5},
+	} {
 		t.Run(tc.name, func(t *testing.T) {
-			golden.Render(t, tc.name, frameSize, scene(tc.level))
+			golden.Render(t, tc.name, frameSize, scene(tc.colors, faded(tc.colors, tc.share)))
 		})
 	}
 }
@@ -81,53 +88,69 @@ func TestShadowGoldens(t *testing.T) {
 // to the same radius: the interior fill must not show square corners
 // through the foreground's rounding as four dark wedges.
 func TestShadowRoundedGolden(t *testing.T) {
-	golden.Render(t, "level-3-rounded", frameSize, roundedScene(tokens.Level3, 12, 1))
+	p := tokens.PlatformLight
+	golden.Render(t, "floating-rounded", frameSize, roundedScene(p, 12, p.FloatingShadow))
 }
 
-// TestShadowOpacity asserts the opacity parameter scales the ramp:
-// 0 paints nothing at all, and a half-strength shadow differs from a
-// full-strength one.
-func TestShadowOpacity(t *testing.T) {
-	bg := golden.Capture(t, frameSize, func(gtx layout.Context) layout.Dimensions {
-		paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
+// TestShadowFollowsItsCoverage asserts the one parameter that varies: a
+// shadow with no coverage paints nothing, and a half-faded one is lighter
+// than the platform's own without disappearing.
+func TestShadowFollowsItsCoverage(t *testing.T) {
+	p := tokens.PlatformLight
+	plane := golden.Capture(t, frameSize, func(gtx layout.Context) layout.Dimensions {
+		paint.FillShape(gtx.Ops, p.WindowBackground, clip.Rect{Max: gtx.Constraints.Max}.Op())
 		return layout.Dimensions{Size: gtx.Constraints.Max}
 	})
-	shadowAt := func(opacity float32) *image.RGBA {
+	shadowAt := func(share float32) *image.RGBA {
 		return golden.Capture(t, frameSize, func(gtx layout.Context) layout.Dimensions {
-			paint.FillShape(gtx.Ops, bgColor, clip.Rect{Max: gtx.Constraints.Max}.Op())
-			depth.Shadow(gtx, boundsRect, tokens.Level3, 12, opacity)
+			paint.FillShape(gtx.Ops, p.WindowBackground, clip.Rect{Max: gtx.Constraints.Max}.Op())
+			depth.Shadow(gtx, boundsRect, 12, faded(p, share))
 			return layout.Dimensions{Size: gtx.Constraints.Max}
 		})
 	}
 	zero, half, full := shadowAt(0), shadowAt(0.5), shadowAt(1)
-	if n := golden.PixelDiff(bg, zero); n != 0 {
-		t.Errorf("opacity 0 painted %d pixel(s); want a no-op", n)
+	if n := golden.PixelDiff(plane, zero); n != 0 {
+		t.Errorf("a shadow with no coverage painted %d pixel(s); want a no-op", n)
 	}
 	if n := golden.PixelDiff(half, full); n == 0 {
-		t.Errorf("opacity 0.5 renders identically to opacity 1; want a lighter shadow")
+		t.Error("half the coverage renders identically to the platform's own; want a lighter shadow")
 	}
-	if n := golden.PixelDiff(bg, half); n == 0 {
-		t.Errorf("opacity 0.5 painted nothing; want a visible shadow")
+	if n := golden.PixelDiff(plane, half); n == 0 {
+		t.Error("half the coverage painted nothing; want a visible shadow")
 	}
 }
 
-// TestShadowAdjacentLevelsDiffer asserts that each adjacent pair of
-// elevation levels produces a visibly different render. Catches
-// regressions where the level-to-geometry mapping silently rounds
-// adjacent levels into the same offset/extent — which would let "four
-// different" goldens drift toward the same byte sequence over time.
-func TestShadowAdjacentLevelsDiffer(t *testing.T) {
-	levels := []tokens.ElevationLevel{
-		tokens.Level0, tokens.Level1, tokens.Level2, tokens.Level3,
+// TestShadowReachesTheMeasuredDistance reads the ramp off the render the way
+// it was read off the captures: outward from the surface's edge along one
+// row, the plane must be darkened at the edge, still darkened a pixel inside
+// the reach, and back to its own value a pixel past it.
+func TestShadowReachesTheMeasuredDistance(t *testing.T) {
+	// The light plane reads the tail: at 4 px inside the reach the ramp is a
+	// eightieth of the way to black, which moves a 255 by three and a 30 by
+	// less than half a unit.
+	p := tokens.PlatformLight
+	const pad = 40
+	size := image.Pt(boundsX1+pad, frameH)
+	img := golden.Capture(t, size, func(gtx layout.Context) layout.Dimensions {
+		paint.FillShape(gtx.Ops, p.WindowBackground, clip.Rect{Max: gtx.Constraints.Max}.Op())
+		depth.Shadow(gtx, boundsRect, 0, p.FloatingShadow)
+		return layout.Dimensions{Size: gtx.Constraints.Max}
+	})
+	reach := 24 // Reach in px at the test's 1:1 metric
+	y := (boundsY0 + boundsY1) / 2
+	at := func(x int) color.NRGBA {
+		i := img.PixOffset(x, y)
+		return color.NRGBA{R: img.Pix[i], G: img.Pix[i+1], B: img.Pix[i+2], A: img.Pix[i+3]}
 	}
-	imgs := make([]*image.RGBA, len(levels))
-	for i, l := range levels {
-		imgs[i] = golden.Capture(t, frameSize, scene(l))
+	plane := at(boundsX1 + reach + 2)
+	if plane.R != p.WindowBackground.R || plane.G != p.WindowBackground.G || plane.B != p.WindowBackground.B {
+		t.Errorf("%d px past the surface the plane reads %v, want the window's own %v — the shadow carries further than it was measured to",
+			reach+2, plane, p.WindowBackground)
 	}
-	for i := 0; i < len(imgs)-1; i++ {
-		if n := golden.PixelDiff(imgs[i], imgs[i+1]); n == 0 {
-			t.Errorf("level-%d and level-%d render identically; expected adjacent levels to differ",
-				i, i+1)
-		}
+	if edge := at(boundsX1 + 1); edge.G >= plane.G {
+		t.Errorf("at the surface's edge the plane reads %v against its own %v; the shadow is not at its peak there", edge, plane)
+	}
+	if inside := at(boundsX1 + reach - 4); inside.G >= plane.G {
+		t.Errorf("%d px out the plane already reads its own value %v; the shadow stops short of the measured reach", reach-4, plane)
 	}
 }

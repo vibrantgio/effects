@@ -12,7 +12,7 @@ import (
 )
 
 // TestThemeTransitionGolden is a golden test of a transitioning theme at
-// frame 0/15/30, with the tween settling to the target colour tokens at
+// frame 0/15/30, with the tween settling to the target colour set at
 // frame 30.
 //
 // The swatch is painted directly with image/draw rather than through Gio.
@@ -21,7 +21,7 @@ import (
 // anything new.
 func TestThemeTransitionGolden(t *testing.T) {
 	const frames = 30
-	tw := transition.ColorTokensTween(tokens.DefaultLight, tokens.DefaultDark, frames)
+	tw := transition.PlatformColorsTween(tokens.PlatformLight, tokens.PlatformDark, frames)
 
 	cases := []struct {
 		name  string
@@ -44,25 +44,26 @@ func TestThemeTransitionGolden(t *testing.T) {
 	// Verify settling at the value level, not just the pixel level: pixel
 	// goldens alone could miss a settling bug if the final lerp happens to
 	// round to visually identical bytes.
-	if got := tw.At(frames); got != tokens.DefaultDark {
-		t.Errorf("tween did not settle to target at frame %d: got %+v, want DefaultDark", frames, got)
+	if got := tw.At(frames); got != tokens.PlatformDark {
+		t.Errorf("tween did not settle to target at frame %d: got %+v, want PlatformDark", frames, got)
 	}
 }
 
-// paintSwatch fills img with colors.Background, then paints five vertical
-// bands showing Surface, Primary, Secondary, OnPrimary, and the Neutral 500
-// strong-border step. These fields together carry enough contrast to make
-// light/dark/midpoint frames visually distinct in the golden PNGs.
-func paintSwatch(img *image.NRGBA, colors tokens.ColorTokens) {
+// paintSwatch fills img with the window's own plane, then paints five vertical
+// bands: the chrome material, the accent, the emphasized selection, the
+// push button's fill and the platform's grid line. Together they carry enough
+// contrast to make light, dark and midpoint frames visually distinct in the
+// golden PNGs.
+func paintSwatch(img *image.NRGBA, colors tokens.PlatformColors) {
 	bounds := img.Bounds()
-	draw.Draw(img, bounds, &image.Uniform{C: colors.Background}, image.Point{}, draw.Src)
+	draw.Draw(img, bounds, &image.Uniform{C: colors.WindowBackground}, image.Point{}, draw.Src)
 
 	bands := []color.NRGBA{
-		colors.Surface,
-		colors.Primary,
-		colors.Secondary,
-		colors.OnPrimary,
-		colors.Ramps.Neutral.Step(500),
+		colors.SidebarMaterial,
+		colors.ControlAccent,
+		colors.SelectedContentBackground,
+		colors.PushButtonFill,
+		colors.Grid,
 	}
 	bandW := bounds.Dx() / len(bands)
 	const inset = 10

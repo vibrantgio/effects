@@ -1,23 +1,29 @@
-// Package transition interpolates a whole set of colour tokens, so a
+// Package transition interpolates a whole set of the platform's colours, so a
 // light-to-dark flip can cross-fade instead of snapping.
 //
 // It is one bridge and nothing else. [github.com/vibrantgio/effects/tween]
 // owns the generic Tween[T] machinery and the per-channel LerpNRGBA
 // primitive; this package supplies the two pieces that teach it the
-// theme's token contract — [LerpColorTokens], which lerps every field of
-// a [tokens.ColorTokens] at a parameter in [0,1], and [ColorTokensTween],
+// theme's colour contract — [LerpPlatformColors], which lerps every field of
+// a [tokens.PlatformColors] at a parameter in [0,1], and [PlatformColorsTween],
 // which packages that as a Tween you sample with At.
 //
 // Three things constrain what it can do. The unit is frames, not time:
-// ColorTokensTween(a, b, 30) is settled at At(30) whether those thirty
+// PlatformColorsTween(a, b, 30) is settled at At(30) whether those thirty
 // frames took half a second or five, so a duration-based fade needs the
 // caller to convert. Interpolation is a straight per-channel average of
-// 8-bit sRGB values with no perceptual or gamma correction, so a sweep
-// between two saturated tokens can pass through a duller midpoint than
-// either endpoint — acceptable for the near-greyscale background and
-// surface roles, more visible on Primary. And the tween only produces
-// values: nothing here drives it. Emitting the intermediate ColorTokens
-// as a theme, frame by frame, is the caller's job.
+// 8-bit sRGB values, coverage included, with no perceptual or gamma
+// correction, so a sweep between two saturated names can pass through a
+// duller midpoint than either endpoint — acceptable for the near-neutral
+// planes and labels, more visible on the accent. And the tween only produces
+// values: nothing here drives it. Emitting the intermediate set as a theme,
+// frame by frame, is the caller's job.
+//
+// The platform's coverages are interpolated as coverages and NOT flattened
+// onto anything: a set is what a consumer reads names out of, and where each
+// name lands is that consumer's business, so a half-way Label is black at
+// half-way to the other appearance's coverage and a consumer flattens it as
+// it always does.
 package transition
 
 import (
@@ -25,64 +31,78 @@ import (
 	"github.com/vibrantgio/theme/tokens"
 )
 
-func lerpRamp(from, to tokens.Ramp, t float64) tokens.Ramp {
-	var r tokens.Ramp
-	for i := range r {
-		r[i] = tween.LerpNRGBA(from[i], to[i], t)
+// LerpPlatformColors interpolates every field of two [tokens.PlatformColors]
+// using [tween.LerpNRGBA], so the result at t=0 and t=1 equals the endpoints
+// exactly.
+//
+// Every field is named here rather than walked by reflection, and the package
+// test walks the struct to prove none was missed: a name added to the set and
+// forgotten here would cross-fade the window around one element that snaps.
+func LerpPlatformColors(from, to tokens.PlatformColors, t float64) tokens.PlatformColors {
+	return tokens.PlatformColors{
+		WindowBackground:                      tween.LerpNRGBA(from.WindowBackground, to.WindowBackground, t),
+		UnderPageBackground:                   tween.LerpNRGBA(from.UnderPageBackground, to.UnderPageBackground, t),
+		ControlBackground:                     tween.LerpNRGBA(from.ControlBackground, to.ControlBackground, t),
+		TextBackground:                        tween.LerpNRGBA(from.TextBackground, to.TextBackground, t),
+		SelectedContentBackground:             tween.LerpNRGBA(from.SelectedContentBackground, to.SelectedContentBackground, t),
+		UnemphasizedSelectedContentBackground: tween.LerpNRGBA(from.UnemphasizedSelectedContentBackground, to.UnemphasizedSelectedContentBackground, t),
+		SelectedTextBackground:                tween.LerpNRGBA(from.SelectedTextBackground, to.SelectedTextBackground, t),
+		UnemphasizedSelectedTextBackground:    tween.LerpNRGBA(from.UnemphasizedSelectedTextBackground, to.UnemphasizedSelectedTextBackground, t),
+		FindHighlight:                         tween.LerpNRGBA(from.FindHighlight, to.FindHighlight, t),
+		Separator:                             tween.LerpNRGBA(from.Separator, to.Separator, t),
+		Grid:                                  tween.LerpNRGBA(from.Grid, to.Grid, t),
+		Label:                                 tween.LerpNRGBA(from.Label, to.Label, t),
+		SecondaryLabel:                        tween.LerpNRGBA(from.SecondaryLabel, to.SecondaryLabel, t),
+		TertiaryLabel:                         tween.LerpNRGBA(from.TertiaryLabel, to.TertiaryLabel, t),
+		QuaternaryLabel:                       tween.LerpNRGBA(from.QuaternaryLabel, to.QuaternaryLabel, t),
+		Text:                                  tween.LerpNRGBA(from.Text, to.Text, t),
+		PlaceholderText:                       tween.LerpNRGBA(from.PlaceholderText, to.PlaceholderText, t),
+		SelectedText:                          tween.LerpNRGBA(from.SelectedText, to.SelectedText, t),
+		Link:                                  tween.LerpNRGBA(from.Link, to.Link, t),
+		HeaderText:                            tween.LerpNRGBA(from.HeaderText, to.HeaderText, t),
+		Control:                               tween.LerpNRGBA(from.Control, to.Control, t),
+		ControlText:                           tween.LerpNRGBA(from.ControlText, to.ControlText, t),
+		DisabledControlText:                   tween.LerpNRGBA(from.DisabledControlText, to.DisabledControlText, t),
+		SelectedControl:                       tween.LerpNRGBA(from.SelectedControl, to.SelectedControl, t),
+		SelectedControlText:                   tween.LerpNRGBA(from.SelectedControlText, to.SelectedControlText, t),
+		AlternateSelectedControlText:          tween.LerpNRGBA(from.AlternateSelectedControlText, to.AlternateSelectedControlText, t),
+		ControlAccent:                         tween.LerpNRGBA(from.ControlAccent, to.ControlAccent, t),
+		KeyboardFocusIndicator:                tween.LerpNRGBA(from.KeyboardFocusIndicator, to.KeyboardFocusIndicator, t),
+		SystemRed:                             tween.LerpNRGBA(from.SystemRed, to.SystemRed, t),
+		SystemOrange:                          tween.LerpNRGBA(from.SystemOrange, to.SystemOrange, t),
+		SystemYellow:                          tween.LerpNRGBA(from.SystemYellow, to.SystemYellow, t),
+		SystemGreen:                           tween.LerpNRGBA(from.SystemGreen, to.SystemGreen, t),
+		SystemMint:                            tween.LerpNRGBA(from.SystemMint, to.SystemMint, t),
+		SystemTeal:                            tween.LerpNRGBA(from.SystemTeal, to.SystemTeal, t),
+		SystemCyan:                            tween.LerpNRGBA(from.SystemCyan, to.SystemCyan, t),
+		SystemBlue:                            tween.LerpNRGBA(from.SystemBlue, to.SystemBlue, t),
+		SystemIndigo:                          tween.LerpNRGBA(from.SystemIndigo, to.SystemIndigo, t),
+		SystemPurple:                          tween.LerpNRGBA(from.SystemPurple, to.SystemPurple, t),
+		SystemPink:                            tween.LerpNRGBA(from.SystemPink, to.SystemPink, t),
+		SystemBrown:                           tween.LerpNRGBA(from.SystemBrown, to.SystemBrown, t),
+		SystemGray:                            tween.LerpNRGBA(from.SystemGray, to.SystemGray, t),
+		Shadow:                                tween.LerpNRGBA(from.Shadow, to.Shadow, t),
+		Highlight:                             tween.LerpNRGBA(from.Highlight, to.Highlight, t),
+		SidebarMaterial:                       tween.LerpNRGBA(from.SidebarMaterial, to.SidebarMaterial, t),
+		CardFill:                              tween.LerpNRGBA(from.CardFill, to.CardFill, t),
+		PushButtonFill:                        tween.LerpNRGBA(from.PushButtonFill, to.PushButtonFill, t),
+		HoverOverlay:                          tween.LerpNRGBA(from.HoverOverlay, to.HoverOverlay, t),
+		PressOverlay:                          tween.LerpNRGBA(from.PressOverlay, to.PressOverlay, t),
+		FloatingShadow:                        tween.LerpNRGBA(from.FloatingShadow, to.FloatingShadow, t),
+		FieldEdge:                             tween.LerpNRGBA(from.FieldEdge, to.FieldEdge, t),
+		ScrollbarThumb:                        tween.LerpNRGBA(from.ScrollbarThumb, to.ScrollbarThumb, t),
+		AlternatingContentBackground:          tween.LerpNRGBA(from.AlternatingContentBackground, to.AlternatingContentBackground, t),
+		Scrim:                                 tween.LerpNRGBA(from.Scrim, to.Scrim, t),
 	}
-	return r
 }
 
-// LerpColorTokens interpolates each colour field of two
-// [tokens.ColorTokens] using [tween.LerpNRGBA] — every ramp and every
-// pinned base, so the result at t=0 and t=1 equals the endpoints exactly.
-func LerpColorTokens(from, to tokens.ColorTokens, t float64) tokens.ColorTokens {
-	return tokens.ColorTokens{
-		Ramps: tokens.RampSet{
-			Neutral:   lerpRamp(from.Ramps.Neutral, to.Ramps.Neutral, t),
-			Primary:   lerpRamp(from.Ramps.Primary, to.Ramps.Primary, t),
-			Secondary: lerpRamp(from.Ramps.Secondary, to.Ramps.Secondary, t),
-			Tertiary:  lerpRamp(from.Ramps.Tertiary, to.Ramps.Tertiary, t),
-			Error:     lerpRamp(from.Ramps.Error, to.Ramps.Error, t),
-			Success:   lerpRamp(from.Ramps.Success, to.Ramps.Success, t),
-			Warning:   lerpRamp(from.Ramps.Warning, to.Ramps.Warning, t),
-			Info:      lerpRamp(from.Ramps.Info, to.Ramps.Info, t),
-		},
-		Tertiary:    tween.LerpNRGBA(from.Tertiary, to.Tertiary, t),
-		OnTertiary:  tween.LerpNRGBA(from.OnTertiary, to.OnTertiary, t),
-		Text:        tween.LerpNRGBA(from.Text, to.Text, t),
-		Seam:        tween.LerpNRGBA(from.Seam, to.Seam, t),
-		Background:  tween.LerpNRGBA(from.Background, to.Background, t),
-		Surface:     tween.LerpNRGBA(from.Surface, to.Surface, t),
-		Primary:     tween.LerpNRGBA(from.Primary, to.Primary, t),
-		OnPrimary:   tween.LerpNRGBA(from.OnPrimary, to.OnPrimary, t),
-		Secondary:   tween.LerpNRGBA(from.Secondary, to.Secondary, t),
-		OnSecondary: tween.LerpNRGBA(from.OnSecondary, to.OnSecondary, t),
-		Error:       tween.LerpNRGBA(from.Error, to.Error, t),
-		OnError:     tween.LerpNRGBA(from.OnError, to.OnError, t),
-		Success:     tween.LerpNRGBA(from.Success, to.Success, t),
-		OnSuccess:   tween.LerpNRGBA(from.OnSuccess, to.OnSuccess, t),
-		Warning:     tween.LerpNRGBA(from.Warning, to.Warning, t),
-		OnWarning:   tween.LerpNRGBA(from.OnWarning, to.OnWarning, t),
-		Info:        tween.LerpNRGBA(from.Info, to.Info, t),
-		OnInfo:      tween.LerpNRGBA(from.OnInfo, to.OnInfo, t),
-		// The inverse pair crosses the midpoint the other way round —
-		// each endpoint's inverse surface is the other endpoint's
-		// surface — so a light-to-dark sweep drags it through the same
-		// dull middle every other role passes through, and lands exact.
-		InverseSurface:   tween.LerpNRGBA(from.InverseSurface, to.InverseSurface, t),
-		OnInverseSurface: tween.LerpNRGBA(from.OnInverseSurface, to.OnInverseSurface, t),
-		Highlight:        tween.LerpNRGBA(from.Highlight, to.Highlight, t),
-	}
-}
-
-// ColorTokensTween constructs a [tween.Tween] interpolating from a to b
-// over frames frames, using [LerpColorTokens].
-func ColorTokensTween(a, b tokens.ColorTokens, frames int) tween.Tween[tokens.ColorTokens] {
-	return tween.Tween[tokens.ColorTokens]{
+// PlatformColorsTween constructs a [tween.Tween] interpolating from a to b
+// over frames frames, using [LerpPlatformColors].
+func PlatformColorsTween(a, b tokens.PlatformColors, frames int) tween.Tween[tokens.PlatformColors] {
+	return tween.Tween[tokens.PlatformColors]{
 		From:   a,
 		To:     b,
 		Frames: frames,
-		Lerp:   LerpColorTokens,
+		Lerp:   LerpPlatformColors,
 	}
 }

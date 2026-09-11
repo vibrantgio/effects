@@ -1,64 +1,64 @@
-// Package depth renders Material-style cast shadows under rectangular
-// regions by composing linear gradients.
+// Package depth renders the shadow a floating surface casts, by composing
+// linear gradients.
 //
 // # An explicit effect, never a default
 //
-// A shadow is opt-in vibrancy, not something a component gets for
-// being raised. On desktop a raised surface reads as raised by tint
-// first and shadow second: it names its level on
-// [tokens.ElevationScale] and paints the neutral-ramp colour that
-// (tokens.ColorTokens).SurfaceAt resolves — one fill, no shadow. A
-// shadow is right only for what floats and can leave: transient,
-// dismissible surfaces above the plane — a toast, a popover, a menu, a
-// drag preview. What is raised in place — a card, a header, static
-// hierarchy — reads as raised by its surface step alone, and no
-// component should default into calling this package for it.
+// A shadow is what tells a floating thing from a raised one. A raised
+// surface — a card, a grouped box, a filled inset — is told by its own small
+// step of fill and draws no shadow at all; a floating one — a dialog, a
+// toast, a menu, a popover, a tooltip — stands on the window's own plane and
+// is told by this. No component should default into calling this package for
+// something that stays where it is.
 //
 // The cost difference backs the rule. One [Shadow] call issues eight
 // [paint.LinearGradientOp] fills — four edge bands and four corner
 // tiles — plus one interior fill: nine paint operations per shadow,
-// every frame it is drawn. A surface step is a single
-// [paint.FillShape].
+// every frame it is drawn. A step of fill is a single [paint.FillShape].
+//
+// # The measurement
+//
+// The colour, the coverage and the reach are the platform's, not a
+// recommendation: outward from a floating pane's 1 px edge stroke the
+// window's #232a2e plane reads #20272b and recovers to #232a2e over 24 px,
+// identically in finder-sidebar-shadow.png and reminders-sidebar-shadow.png
+// in the organization's macOS reference. Black at 0.075 reproduces the
+// darkest pixel on every channel, which is what tokens.PlatformColors'
+// FloatingShadow carries, and the falloff from there is LINEAR in the encoded
+// pixel: with the peak at the pane's edge and zero 24 px out, a linear ramp
+// reproduces the captured byte to within one 255th at every distance on every
+// channel, and no other shape tried does better — a square falloff misses 24
+// of the 29 sampled distances, a square-root one 16 and a smoothstep 11,
+// against the linear ramp's 10, and every miss in every shape is a single
+// 255th, the plane being dark enough that one unit is a twentieth of the
+// whole shadow.
+//
+// The ramp is symmetric around the surface, with no downward bias. The
+// captures are of a vertical edge and show the peak at the pane's own edge;
+// nothing measured supports lighting the shadow from above, so the shadow
+// rectangle is the caller's bounds and not a shifted copy of them.
 //
 // # Geometry
 //
-// A shadow is a soft black fringe around a "shadow rectangle" — the
-// caller's bounds shifted downward by half the elevation extent — to
-// approximate light from above. The geometry mirrors
-// [github.com/vibrantgio/effects/glow.Halo] but with two differences:
+// A shadow is a soft fringe around the caller's bounds: the interior filled
+// at the peak coverage — so the ring stays continuous once the caller paints
+// their foreground on top — and eight gradient tiles carrying the ramp out to
+// the reach.
 //
-//   - The shadow rectangle's interior is filled at the peak alpha too,
-//     so the strip extending below bounds stays visible once the caller
-//     paints their foreground on top.
-//   - Nothing about the colour is a parameter. It is a fixed key-shadow
-//     black; the peak alpha scales only with the caller's opacity, and
-//     neither varies with the elevation level — only the geometry does.
-//
-// Extent (the gradient's falloff distance) and offset (the downward
-// shift of the shadow rectangle) both follow the level: extent is the
-// level's dp value from [tokens.Elevation] converted to pixels through
-// gtx.Metric, and offset is half of that. [tokens.Level0] — and any
-// level whose dp rounds to zero pixels at the current density — paints
-// nothing at all.
-//
-// # Rounding and opacity
+// # Rounding
 //
 // The interior fill is a [clip.RRect] at the caller's radius, so a
 // caller passing the same radius it rounds its foreground to does not
 // get square dark wedges showing through the rounded corners; the
 // corner tiles of the penumbra grow inward to cover the notch between
-// the rounded interior and the square corner, keeping the alpha ramp
-// seam-free. Opacity scales the whole ramp, so a shadow that fades
-// with its surface passes its fade alpha straight through instead of
-// wrapping the call in a [paint.PushOpacity] layer. Radius 0 and
-// opacity 1 give a square, full-strength shadow.
+// the rounded interior and the square corner, keeping the ramp
+// seam-free. Radius 0 gives a square shadow.
 //
-// # One thing a caller trips on
+// # Fading one
 //
-// The black is not a token role, so it does not follow the theme. The
-// same call separates a surface strongly on a light background and
-// barely at all on a dark one; a dark theme that wants visible
-// elevation needs something other than this package.
+// A surface that fades passes a shadow whose own coverage is scaled, rather
+// than wrapping the call in a [paint.PushOpacity] layer: the parameter is the
+// colour to draw the peak in, so a toast at a third of its way in hands over
+// FloatingShadow with a third of its coverage.
 package depth
 
 import (
@@ -70,67 +70,49 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
-
-	"github.com/vibrantgio/theme/tokens"
 )
 
-// keyShadowAlpha is Material 3's recommended key-shadow opacity (~30 %).
-// All elevation levels share this peak alpha; only the geometry varies
-// with the level. The caller's opacity scales it.
-const keyShadowAlpha uint8 = 76
+// Reach is how far the shadow carries past the surface it is cast by, and it
+// is a measurement: the window plane recovers to its own value exactly 24 px
+// out from a floating pane's edge in both stored sidebar-shadow captures. It
+// does not vary with what is floating — the platform draws one shadow.
+const Reach = unit.Dp(24)
 
 // bezierCircle is the cubic-Bézier control-point ratio that best
 // approximates a quarter circle: 4/3·(√2−1).
 const bezierCircle = 0.55228475
 
-// Shadow paints a Material-style cast shadow under bounds onto gtx.Ops
-// at the given elevation level. The shadow is biased downward to
-// approximate light from above.
+// Shadow paints the shadow a floating surface casts around bounds onto
+// gtx.Ops, in shadow at its own coverage at the surface's edge, falling
+// linearly to nothing [Reach] away.
 //
-// radius rounds the shadow rectangle's corners, in pixels. Callers
-// pass the radius they round their foreground to, so the interior
-// fill cannot show through the rounding as square wedges; 0 keeps the
-// square geometry. opacity scales the shadow's alpha ramp and is
-// clamped to [0, 1]; a shadow that fades with its surface passes the
-// surface's fade alpha here.
+// shadow is the platform's FloatingShadow, or a copy of it whose coverage the
+// caller has scaled to fade with the surface. radius rounds the shadow's
+// corners, in pixels: callers pass the radius they round their foreground to,
+// so the interior fill cannot show through the rounding as square wedges, and
+// 0 keeps the square geometry.
 //
-// At [tokens.Level0] (and any level whose dp value rounds to zero pixels
-// at the current metric), and at opacity 0, the function is a no-op.
-func Shadow(gtx layout.Context, bounds image.Rectangle, level tokens.ElevationLevel, radius int, opacity float32) {
-	dp := dpFor(level)
-	if dp <= 0 {
+// A zero coverage, or a reach that rounds to zero pixels at the current
+// metric, paints nothing.
+func Shadow(gtx layout.Context, bounds image.Rectangle, radius int, shadow color.NRGBA) {
+	extent := gtx.Metric.Dp(Reach)
+	if extent <= 0 || shadow.A == 0 {
 		return
 	}
-	extent := gtx.Metric.Dp(unit.Dp(dp))
-	if extent <= 0 {
-		return
-	}
-	if opacity > 1 {
-		opacity = 1
-	}
-	if opacity <= 0 {
-		return
-	}
-	alpha := uint8(float32(keyShadowAlpha)*opacity + 0.5)
-	if alpha == 0 {
-		return
-	}
-	offset := extent / 2
 
-	shadowBounds := bounds.Add(image.Pt(0, offset))
+	shadowBounds := bounds
 	if radius < 0 {
 		radius = 0
 	}
 	if m := min(shadowBounds.Dx(), shadowBounds.Dy()) / 2; radius > m {
 		radius = m
 	}
-	inner := color.NRGBA{A: alpha}
-	outer := color.NRGBA{A: 0}
+	inner := shadow
+	outer := color.NRGBA{R: shadow.R, G: shadow.G, B: shadow.B}
 
-	// Interior of the shadow rectangle, rounded to the caller's radius.
-	// Most of this is later covered by the caller's foreground; the
-	// strip extending below bounds stays visible as the cast-shadow
-	// band.
+	// The interior, rounded to the caller's radius. Most of it is covered by
+	// the caller's foreground; filling it keeps the ring of tiles around it
+	// continuous at their inner seam.
 	if radius == 0 {
 		paint.FillShape(gtx.Ops, inner, clip.Rect(shadowBounds).Op())
 	} else {
@@ -179,20 +161,6 @@ func Shadow(gtx layout.Context, bounds image.Rectangle, level tokens.ElevationLe
 	cornerTile(gtx, image.Pt(bMax.X, bMin.Y), +1, -1, rho, r, inner, outer)
 	cornerTile(gtx, image.Pt(bMin.X, bMax.Y), -1, +1, rho, r, inner, outer)
 	cornerTile(gtx, image.Pt(bMax.X, bMax.Y), +1, +1, rho, r, inner, outer)
-}
-
-func dpFor(level tokens.ElevationLevel) float32 {
-	switch level {
-	case tokens.Level0:
-		return tokens.Elevation.Level0
-	case tokens.Level1:
-		return tokens.Elevation.Level1
-	case tokens.Level2:
-		return tokens.Elevation.Level2
-	case tokens.Level3:
-		return tokens.Elevation.Level3
-	}
-	return 0
 }
 
 // cornerTile fills one corner of the penumbra. corner is the shadow
