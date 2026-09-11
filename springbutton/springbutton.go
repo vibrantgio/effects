@@ -10,9 +10,9 @@
 // [github.com/vibrantgio/components/button.Render], the pure renderer, then
 // wraps the output in an [op.Affine] scale driven by a
 // [github.com/vibrantgio/effects/spring.Spring]. The underlying button's
-// visual contract — the emphasis register; hover, focus, press,
-// disabled colours; 44 dp minimum hit target; semantic ops — is
-// preserved.
+// visual contract — the emphasis variant and the platform colours it
+// reads at rest, pressed, focused and disabled; 44 dp minimum hit
+// target; semantic ops — is preserved.
 //
 //	// Static components button.Button:
 //	w, _ := button.Button(theme, button.Props{Label: "Save", OnClick: save}).First()
@@ -33,7 +33,7 @@
 // against this package's own settle tolerance, a press-and-release
 // settles 25 frames after the release.
 //
-// While the spring is in flight the widget schedules its own redraws
+// While the spring is in flight the component schedules its own redraws
 // via [op.InvalidateCmd]; once it settles, no further frames are
 // requested, so a SpringButton at rest costs the same per frame as a
 // static components button.
@@ -56,7 +56,7 @@
 // every component reading the same typography: the cache lives behind
 // the Typography value, so it survives the copy the map function below
 // makes of it. It is not safe to use from two goroutines — Gio lays the
-// widget forest out on the one goroutine that runs the event loop,
+// layout tree out on the one goroutine that runs the event loop,
 // which is what makes sharing it correct. Props.Shaper is an explicit
 // per-instance override only; leave it nil in normal use. The role's
 // whole text style — typeface, weight, size and line height — reaches
@@ -161,16 +161,16 @@ func SpringButton(
 	// theme's cached shaper; the theme owns the typeface.
 	resolved := rx.SwitchMap(th, func(t theme.Theme) rx.Observable[resolvedTokens] {
 		return rx.Map(
-			rx.CombineLatest5(t.Color, t.Typography, t.Spacing, t.Radius, t.Density),
-			func(n rx.Tuple5[tokens.ColorTokens, tokens.Typography, tokens.SpacingScale, tokens.RadiusScale, tokens.Density]) resolvedTokens {
+			rx.CombineLatest5(t.Platform, t.Typography, t.Spacing, t.Radius, t.Density),
+			func(n rx.Tuple5[tokens.PlatformColors, tokens.Typography, tokens.SpacingScale, tokens.RadiusScale, tokens.Density]) resolvedTokens {
 				typ := n.Second
 				return resolvedTokens{
-					color:   n.First,
-					label:   typ.LabelLarge,
-					spacing: n.Third,
-					radius:  n.Fourth,
-					density: n.Fifth,
-					shaper:  typ.Shaper(),
+					platform: n.First,
+					label:    typ.LabelLarge,
+					spacing:  n.Third,
+					radius:   n.Fourth,
+					density:  n.Fifth,
+					shaper:   typ.Shaper(),
 				}
 			},
 		)
@@ -245,7 +245,7 @@ func SpringButton(
 					innerDims := button.Render(
 						shaper,
 						props.Label,
-						tok.color, tok.spacing, tok.radius,
+						tok.platform, tok.spacing, tok.radius,
 						tok.label, tok.density,
 						state,
 					)(gtx)
@@ -282,7 +282,7 @@ func SpringButton(
 func renderState(props button.Props, interaction button.RenderState) button.RenderState {
 	s := interaction
 	s.Emphasis = props.Emphasis
-	s.Ground = props.Ground
+	s.Surface = props.Surface
 	s.Fill = props.Fill
 	s.OnFill = props.OnFill
 	return s
@@ -293,10 +293,10 @@ func renderState(props button.Props, interaction button.RenderState) button.Rend
 // same token space as the static button so the visual contract matches
 // at scale = 1.
 type resolvedTokens struct {
-	color   tokens.ColorTokens
-	label   tokens.TextStyle // the LabelLarge role: typeface, weight, size, line height
-	spacing tokens.SpacingScale
-	radius  tokens.RadiusScale
-	density tokens.Density // control height and inner padding
-	shaper  *text.Shaper   // the theme's cached shaper
+	platform tokens.PlatformColors
+	label    tokens.TextStyle // the LabelLarge role: typeface, weight, size, line height
+	spacing  tokens.SpacingScale
+	radius   tokens.RadiusScale
+	density  tokens.Density // control height and inner padding
+	shaper   *text.Shaper   // the theme's cached shaper
 }
