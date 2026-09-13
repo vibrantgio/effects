@@ -68,7 +68,7 @@ github.com/reactivego/rx v0.3.0 and Go 1.25.1.
 | `springbutton` | `components/button` with a press that scales down and springs back, on the same props and the same visual contract — including `Props.Emphasis`, since it renders through the pure `button.Render` and has to copy across every field the two structs share. The one shipped variant. |
 | `transition` | Interpolates a whole `tokens.ColorTokens` set between two values, so a light-to-dark flip can cross-fade rather than snap. Moved here from spectrum in the G-B3 inversion; the `spectrum/transition` alias that forwarded here is deleted as of spectrum v0.2.0. |
 | `blur` | The blur Gio does not have: a parallel three-pass box approximation of a Gaussian (`Gaussian`, `Blurrer`), `Cache` for static imagery blurred once and reused, and `Backdrop` — the "blurred behind the dialog" pipeline on `gioui.org/gpu/headless`, with `FallbackOp` and `Available` for the platforms where headless rendering is not. |
-| `depth` | A Material-style cast shadow under a rectangle, composed from eight linear gradients, with extent and offset read from a `tokens.ElevationLevel`. Opt-in vibrancy per ADR-005: a shadow marks what floats and can leave — a toast, a popover, a menu — never what is raised in place, which reads as raised by its surface step alone. The E2.2 caller audit is recorded in the package doc. |
+| `depth` | A cast shadow under a rectangle, composed from eight linear gradients, with extent and offset read from a `tokens.ElevationLevel`. Opt-in vibrancy per ADR-005: a shadow marks what floats and can leave — a toast, a popover, a menu — never what is raised in place, which reads as raised by its surface step alone. The E2.2 caller audit is recorded in the package doc. |
 | `glow` | A luminance halo around a rectangle, composed from eight linear gradients standing in for the radial gradient Gio does not expose. The E4.4 verdict — why an animated glow is gradients, not blur — is recorded in the package doc, with the measurements. |
 | `conductor` | A shared frame counter, so a staggered wave stays phase-locked. Independent per-component simulations drift; participants reading `Local(offset)` off one clock do not. |
 
@@ -241,8 +241,8 @@ estimated.
   all four. Opacity is a parameter, so a shadow that has to fade with its
   surface is given the alpha that surface is painting at, as a fading toast
   is. And the black is not a token role, so the same shadow that separates a
-  toast on a light background barely registers a difference on a dark one. What changed around it is the role: elevation is now a tonal
-  surface at every level (`SurfaceAt`, ADR-005) and this package is the
+  toast on a light background barely registers a difference on a dark one. What changed around it is the role: every level is
+  filled with the platform's own value, and this package is the
   explicit opt-in for
   the surfaces that float, not the default way to raise anything.
 - **`glow` reserves no space and measures in pixels.** `Halo` draws outside

@@ -107,7 +107,7 @@ const (
 )
 
 // DefaultFrames is the opacity-tween duration in frames: the motion
-// scale's slowest stop (DurXSlow, MD3 long2 = 500 ms) at the 60 Hz
+// scale's slowest stop (DurXSlow, 500 ms) at the 60 Hz
 // reference rate — 30 frames.
 var DefaultFrames = FramesAt(tokens.Motion.DurXSlow, defaultFPS)
 
