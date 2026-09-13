@@ -32,6 +32,14 @@
 // 255th, the plane being dark enough that one unit is a twentieth of the
 // whole shadow.
 //
+// The coverage handed to Gio is not that number. Gio blends a coverage it is
+// handed in linear light, because it renders into an sRGB target, while the
+// platform blends the encoded byte; so the peak goes over at
+// [vgcolor.LinearCoverage] of it — 0x28 where the shadow carries 0x13 — and
+// the gradient carries that down to nothing. Over the whole ramp and every
+// surface byte that lands where the platform's own blend lands to within one
+// 255th, the same bound the ramp was fitted to.
+//
 // The ramp is symmetric around the surface, with no downward bias. The
 // captures are of a vertical edge and show the peak at the pane's own edge;
 // nothing measured supports lighting the shadow from above, so the shadow
@@ -70,6 +78,8 @@ import (
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
+
+	vgcolor "github.com/vibrantgio/theme/color"
 )
 
 // Reach is how far the shadow carries past the surface it is cast by, and it
@@ -107,7 +117,13 @@ func Shadow(gtx layout.Context, bounds image.Rectangle, radius int, shadow color
 	if m := min(shadowBounds.Dx(), shadowBounds.Dy()) / 2; radius > m {
 		radius = m
 	}
+	// Gio blends a coverage it is handed in linear light and the platform
+	// blends the encoded byte, so the ramp is handed over at the coverage
+	// fitted to Gio's blend. At and below this shadow's own 0x13 that fit
+	// lands the platform's byte to within one 255th on every surface — the
+	// same bound the ramp itself was fitted to.
 	inner := shadow
+	inner.A = vgcolor.LinearCoverage(shadow.A)
 	outer := color.NRGBA{R: shadow.R, G: shadow.G, B: shadow.B}
 
 	// The interior, rounded to the caller's radius. Most of it is covered by
