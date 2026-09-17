@@ -11,8 +11,8 @@
 // wraps the output in an [op.Affine] scale driven by a
 // [github.com/vibrantgio/effects/spring.Spring]. The underlying button's
 // visual contract — the emphasis variant and the platform colours it
-// reads at rest, pressed, focused and disabled; 44 dp minimum hit
-// target; semantic ops — is preserved.
+// reads at rest, pressed, focused and disabled; the drawn control as its
+// own pointer target; semantic ops — is preserved.
 //
 //	// Static components button.Button:
 //	w, _ := button.Button(theme, button.Props{Label: "Save", OnClick: save}).First()
