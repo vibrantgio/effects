@@ -94,6 +94,7 @@ func LerpPlatformColors(from, to tokens.PlatformColors, t float64) tokens.Platfo
 		ScrollbarThumb:                        tween.LerpNRGBA(from.ScrollbarThumb, to.ScrollbarThumb, t),
 		AlternatingContentBackground:          tween.LerpNRGBA(from.AlternatingContentBackground, to.AlternatingContentBackground, t),
 		Scrim:                                 tween.LerpNRGBA(from.Scrim, to.Scrim, t),
+		SidebarSearchFill:                     tween.LerpNRGBA(from.SidebarSearchFill, to.SidebarSearchFill, t),
 	}
 }
 
