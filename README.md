@@ -39,9 +39,8 @@ from [theme](https://github.com/vibrantgio/theme), `button` from
 [traer](https://github.com/vibrantgio/traer) particle system.
 [patterns](https://github.com/vibrantgio/patterns) is built on it — its toast
 takes its cast shadow from `depth` and its fade from `tween` — and one
-[workbench](https://github.com/vibrantgio/workbench) application uses `depth`
-directly. The [organization page](https://github.com/vibrantgio) has the full
-tier table.
+application uses `depth` directly. The [organization page](https://github.com/vibrantgio)
+has the full tier table.
 
 The layering inversions that used to run through this module are cut. The
 prism↔pulse cycle is gone: components' root module does not require effects, and
@@ -189,11 +188,8 @@ answer.
 
 ## For coding assistants
 
-Read the canonical guide before writing code against this module — the module
-inventory with current tags, the application skeleton, MVU and rx semantics,
-typography, and the pitfalls that are not guessable:
-
-<https://raw.githubusercontent.com/vibrantgio/workbench/master/llms.txt>
+Read the org guide before you write code against this module: the plan
+root's [`AGENTS.md`](https://github.com/vibrantgio/.github/blob/master/AGENTS.md).
 
 [`AGENTS.md`](./AGENTS.md) in this repository has the build, test and
 golden-image commands. The golden line there is exact and both halves of it
