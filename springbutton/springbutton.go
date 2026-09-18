@@ -282,6 +282,7 @@ func SpringButton(
 func renderState(props button.Props, interaction button.RenderState) button.RenderState {
 	s := interaction
 	s.Emphasis = props.Emphasis
+	s.Variant = props.Variant
 	s.Surface = props.Surface
 	s.Fill = props.Fill
 	s.Foreground = props.Foreground
