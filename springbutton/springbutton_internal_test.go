@@ -64,7 +64,7 @@ func TestRenderStateForwardsEveryFieldPropsCarries(t *testing.T) {
 // that come off the live clickable rather than off Props must survive the copy
 // untouched.
 func TestRenderStateKeepsTheInteractionHalf(t *testing.T) {
-	in := button.RenderState{Hovered: true, Focused: true, Pressed: true, Disabled: true}
+	in := button.RenderState{Hovered: true, Focused: true, Pressed: true, Disabled: true, Checked: true}
 	got := renderState(button.Props{}, in)
 
 	iv, gv := reflect.ValueOf(in), reflect.ValueOf(got)

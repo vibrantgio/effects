@@ -221,44 +221,74 @@ func SpringButton(
 				sp.Tick(invDt)
 				scale := float32(sp.Value())
 
-				dims := click.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+				state := renderState(props, button.RenderState{
+					Hovered:  hovered,
+					Focused:  focused,
+					Pressed:  pressed,
+					Disabled: dis,
+				})
+
+				desc := props.Description
+				if desc == "" {
+					desc = props.Label
+				}
+				// A button whose label is a symbol is a different drawing
+				// from one carrying text, and in a chrome region it is the
+				// platform's bordered toolbar control. The static button
+				// picks between the three by the same two facts, and this
+				// one picks with it: a spring button handed
+				// Props.Variant Chrome and a symbol draws the toolbar
+				// control, never the form button under another name.
+				iconOnly := props.Icon != nil && props.Label == ""
+				chrome := iconOnly && state.Variant == button.Chrome
+
+				face := func(gtx layout.Context) layout.Dimensions {
 					semantic.ClassOp(semantic.Button).Add(gtx.Ops)
 					semantic.LabelOp(props.Label).Add(gtx.Ops)
-					desc := props.Description
-					if desc == "" {
-						desc = props.Label
-					}
 					semantic.DescriptionOp(desc).Add(gtx.Ops)
 					semantic.EnabledOp(!dis).Add(gtx.Ops)
-
-					state := renderState(props, button.RenderState{
-						Hovered:  hovered,
-						Focused:  focused,
-						Pressed:  pressed,
-						Disabled: dis,
-					})
-
-					macro := op.Record(gtx.Ops)
+					switch {
+					case chrome:
+						return button.ChromeFace(props.Icon, tok.platform, tok.density, state)(gtx)
+					case iconOnly:
+						return button.RenderIcon(props.Icon,
+							tok.platform, tok.spacing, tok.radius, tok.density, state)(gtx)
+					}
 					// Render takes the LabelLarge role's whole text style
 					// and the theme's density, so the spring button shapes
 					// and sizes exactly like the static one.
-					innerDims := button.Render(
+					return button.Render(
 						shaper,
 						props.Label,
 						tok.platform, tok.spacing, tok.radius,
 						tok.label, tok.density,
 						state,
 					)(gtx)
-					call := macro.Stop()
+				}
 
-					origin := f32.Pt(float32(innerDims.Size.X)/2, float32(innerDims.Size.Y)/2)
-					tr := f32.Affine2D{}.Scale(origin, f32.Pt(scale, scale))
-					stack := op.Affine(tr).Push(gtx.Ops)
-					call.Add(gtx.Ops)
-					stack.Pop()
+				// The scale is applied around whatever was drawn, and for
+				// the chrome control that includes the drop shadow it casts
+				// on its band: the shadow belongs to the control and travels
+				// with it under the press. It is cast AROUND the clickable
+				// because it falls outside the control's own box and a
+				// clickable clips what it wraps to that box.
+				macro := op.Record(gtx.Ops)
+				var innerDims layout.Dimensions
+				if chrome {
+					innerDims = button.ChromeShadow(gtx, tok.platform, state, func(gtx layout.Context) layout.Dimensions {
+						return click.Layout(gtx, face)
+					})
+				} else {
+					innerDims = click.Layout(gtx, face)
+				}
+				call := macro.Stop()
 
-					return innerDims
-				})
+				origin := f32.Pt(float32(innerDims.Size.X)/2, float32(innerDims.Size.Y)/2)
+				tr := f32.Affine2D{}.Scale(origin, f32.Pt(scale, scale))
+				stack := op.Affine(tr).Push(gtx.Ops)
+				call.Add(gtx.Ops)
+				stack.Pop()
+				dims := innerDims
 
 				if !sp.Settled(settleTolerance) {
 					gtx.Execute(op.InvalidateCmd{})
