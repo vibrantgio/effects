@@ -101,6 +101,8 @@ func LerpPlatformColors(from, to tokens.PlatformColors, t float64) tokens.Platfo
 		ToolbarSearchRim:                      tween.LerpNRGBA(from.ToolbarSearchRim, to.ToolbarSearchRim, t),
 		ToolbarControlShadow:                  tween.LerpNRGBA(from.ToolbarControlShadow, to.ToolbarControlShadow, t),
 		ToolbarCheckedOverlay:                 tween.LerpNRGBA(from.ToolbarCheckedOverlay, to.ToolbarCheckedOverlay, t),
+		PaneRim:                               tween.LerpNRGBA(from.PaneRim, to.PaneRim, t),
+		PaneShadow:                            tween.LerpNRGBA(from.PaneShadow, to.PaneShadow, t),
 	}
 }
 

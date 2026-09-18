@@ -105,7 +105,20 @@ const bezierCircle = 0.55228475
 // A zero coverage, or a reach that rounds to zero pixels at the current
 // metric, paints nothing.
 func Shadow(gtx layout.Context, bounds image.Rectangle, radius int, shadow color.NRGBA) {
-	extent := gtx.Metric.Dp(Reach)
+	ShadowAt(gtx, bounds, radius, Reach, shadow)
+}
+
+// ShadowAt is [Shadow] with the reach stated by the caller, for a surface
+// whose own capture measures a ramp of another length.
+//
+// [Reach] is the measurement for a floating surface and [Shadow] is the call
+// to make for one. A caller reaches for this only where a stored capture
+// gives it a reach of its own, and passes that measurement; a caller that
+// wants an offset shadow passes bounds already moved by it, since a shadow
+// sunk below the shape it belongs to is that shape's rectangle shifted and
+// nothing else.
+func ShadowAt(gtx layout.Context, bounds image.Rectangle, radius int, reach unit.Dp, shadow color.NRGBA) {
+	extent := gtx.Metric.Dp(reach)
 	if extent <= 0 || shadow.A == 0 {
 		return
 	}
