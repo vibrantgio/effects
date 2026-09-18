@@ -47,9 +47,10 @@ func TestLerpPlatformColorsCoversEveryField(t *testing.T) {
 var nrgbaType = reflect.TypeOf(color.NRGBA{})
 
 // fillDistinct assigns a unique, fully opaque, non-zero NRGBA to every colour
-// leaf reachable from v, recursing through nested structs and arrays. Any leaf
-// that is not a color.NRGBA fails the test: a future non-colour field in
-// PlatformColors needs an explicit decision here and in LerpPlatformColors.
+// leaf reachable from v and a unique non-zero length to every dp leaf,
+// recursing through nested structs and arrays. Any leaf that is neither
+// fails the test: a further kind of field in PlatformColors needs an explicit
+// decision here and in LerpPlatformColors.
 func fillDistinct(t *testing.T, v reflect.Value, n *uint32) {
 	t.Helper()
 	switch {
@@ -57,6 +58,12 @@ func fillDistinct(t *testing.T, v reflect.Value, n *uint32) {
 		v.Set(reflect.ValueOf(color.NRGBA{
 			R: uint8(*n), G: uint8(*n >> 8), B: uint8(*n >> 16), A: 0xFF,
 		}))
+		*n++
+	case v.Kind() == reflect.Float32:
+		// A measured shadow carries its reach and its offset in dp beside
+		// its coverage, and a lerp that dropped one would cross-fade a
+		// window onto the wrong shape.
+		v.SetFloat(float64(*n))
 		*n++
 	case v.Kind() == reflect.Struct:
 		for i := 0; i < v.NumField(); i++ {
@@ -67,17 +74,17 @@ func fillDistinct(t *testing.T, v reflect.Value, n *uint32) {
 			fillDistinct(t, v.Index(i), n)
 		}
 	default:
-		t.Fatalf("PlatformColors carries a non-colour leaf of type %v; extend LerpPlatformColors and this test", v.Type())
+		t.Fatalf("PlatformColors carries a leaf of type %v that is neither a colour nor a length; extend LerpPlatformColors and this test", v.Type())
 	}
 }
 
-// diffLeaves reports the paths of colour leaves where got differs from want.
+// diffLeaves reports the paths of the leaves where got differs from want.
 func diffLeaves(got, want reflect.Value) []string {
 	var diffs []string
 	var walk func(path string, g, w reflect.Value)
 	walk = func(path string, g, w reflect.Value) {
 		switch {
-		case g.Type() == nrgbaType:
+		case g.Type() == nrgbaType, g.Kind() == reflect.Float32:
 			if !g.Equal(w) {
 				diffs = append(diffs, path)
 			}

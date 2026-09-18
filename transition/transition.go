@@ -90,7 +90,7 @@ func LerpPlatformColors(from, to tokens.PlatformColors, t float64) tokens.Platfo
 		PushButtonFill:                        tween.LerpNRGBA(from.PushButtonFill, to.PushButtonFill, t),
 		HoverOverlay:                          tween.LerpNRGBA(from.HoverOverlay, to.HoverOverlay, t),
 		PressOverlay:                          tween.LerpNRGBA(from.PressOverlay, to.PressOverlay, t),
-		FloatingShadow:                        tween.LerpNRGBA(from.FloatingShadow, to.FloatingShadow, t),
+		FloatingShadow:                        LerpDropShadow(from.FloatingShadow, to.FloatingShadow, t),
 		FieldEdge:                             tween.LerpNRGBA(from.FieldEdge, to.FieldEdge, t),
 		ScrollbarThumb:                        tween.LerpNRGBA(from.ScrollbarThumb, to.ScrollbarThumb, t),
 		AlternatingContentBackground:          tween.LerpNRGBA(from.AlternatingContentBackground, to.AlternatingContentBackground, t),
@@ -102,10 +102,27 @@ func LerpPlatformColors(from, to tokens.PlatformColors, t float64) tokens.Platfo
 		ToolbarSearchRim:                      tween.LerpNRGBA(from.ToolbarSearchRim, to.ToolbarSearchRim, t),
 		ToolbarLabel:                          tween.LerpNRGBA(from.ToolbarLabel, to.ToolbarLabel, t),
 		ToolbarControlSeam:                    tween.LerpNRGBA(from.ToolbarControlSeam, to.ToolbarControlSeam, t),
-		ToolbarControlShadow:                  tween.LerpNRGBA(from.ToolbarControlShadow, to.ToolbarControlShadow, t),
+		ToolbarControlShadow:                  LerpDropShadow(from.ToolbarControlShadow, to.ToolbarControlShadow, t),
 		ToolbarCheckedOverlay:                 tween.LerpNRGBA(from.ToolbarCheckedOverlay, to.ToolbarCheckedOverlay, t),
 		PaneRim:                               tween.LerpNRGBA(from.PaneRim, to.PaneRim, t),
-		PaneShadow:                            tween.LerpNRGBA(from.PaneShadow, to.PaneShadow, t),
+		PaneShadow:                            LerpDropShadow(from.PaneShadow, to.PaneShadow, t),
+	}
+}
+
+// LerpDropShadow interpolates a measured shadow: its coverage with
+// [tween.LerpNRGBA] and its geometry with [tween.LerpFloat64], so a window
+// crossing from one appearance to the other carries the reach and the offset
+// over beside the coverage they were fitted with. The two appearances do not
+// always agree on the geometry — the bordered toolbar control's does
+// not — and a cross-fade that moved the coverage alone would spread the dark
+// reading over the light shape halfway across.
+//
+// The result at t=0 and t=1 equals the endpoints exactly.
+func LerpDropShadow(from, to tokens.DropShadow, t float64) tokens.DropShadow {
+	return tokens.DropShadow{
+		Peak:   tween.LerpNRGBA(from.Peak, to.Peak, t),
+		Reach:  float32(tween.LerpFloat64(float64(from.Reach), float64(to.Reach), t)),
+		Offset: float32(tween.LerpFloat64(float64(from.Offset), float64(to.Offset), t)),
 	}
 }
 

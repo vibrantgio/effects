@@ -26,22 +26,23 @@ import (
 // is the whole tolerance, and it is the tolerance the ramp itself was fitted
 // to off the sidebar-shadow captures.
 func TestRampLandsWhereThePlatformComposites(t *testing.T) {
-	const reach = 24 // Reach in px at the test's 1:1 metric.
 	for _, tc := range []struct {
-		name  string
-		plane color.NRGBA
-		peak  color.NRGBA
+		name   string
+		plane  color.NRGBA
+		shadow tokens.DropShadow
 	}{
 		{"over the light plane", tokens.PlatformLight.WindowBackground, tokens.PlatformLight.FloatingShadow},
 		{"over the dark plane", tokens.PlatformDark.WindowBackground, tokens.PlatformDark.FloatingShadow},
 		{"over the accent", tokens.PlatformLight.ControlAccent, tokens.PlatformLight.FloatingShadow},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			// The reading's own reach, in px at the test's 1:1 metric.
+			reach := int(tc.shadow.Reach)
 			const pad = 40
 			size := image.Pt(boundsX1+pad, frameH)
 			img := golden.Capture(t, size, func(gtx layout.Context) layout.Dimensions {
 				paint.FillShape(gtx.Ops, tc.plane, clip.Rect{Max: gtx.Constraints.Max}.Op())
-				depth.Shadow(gtx, boundsRect, 0, tc.peak)
+				depth.Shadow(gtx, boundsRect, 0, tc.shadow)
 				return layout.Dimensions{Size: gtx.Constraints.Max}
 			})
 			y := (boundsY0 + boundsY1) / 2
@@ -49,7 +50,7 @@ func TestRampLandsWhereThePlatformComposites(t *testing.T) {
 			for k := 0; k < reach; k++ {
 				// The gradient is sampled at the pixel's centre, half a pixel
 				// out from the stop at the surface's edge.
-				coverage := float64(tc.peak.A) / 255 * (1 - (float64(k)+0.5)/reach)
+				coverage := float64(tc.shadow.Peak.A) / 255 * (1 - (float64(k)+0.5)/float64(reach))
 				i := img.PixOffset(boundsX1+k, y)
 				for c, plane := range []uint8{tc.plane.R, tc.plane.G, tc.plane.B} {
 					want := int(math.Round((1 - coverage) * float64(plane)))

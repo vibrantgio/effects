@@ -27,17 +27,17 @@ var (
 
 // faded returns the platform's floating shadow at a share of its own
 // coverage, which is how a surface that fades takes its shadow with it.
-func faded(p tokens.PlatformColors, share float32) color.NRGBA {
-	s := p.FloatingShadow
-	s.A = uint8(float32(s.A)*share + 0.5)
-	return s
+func faded(p tokens.PlatformColors, share float32) tokens.DropShadow {
+	peak := p.FloatingShadow.Peak
+	peak.A = uint8(float32(peak.A)*share + 0.5)
+	return p.FloatingShadow.WithPeak(peak)
 }
 
 // scene composes the window's own plane, a cast shadow, and a foreground
 // rectangle drawn on top of it. The plane is the platform's, so the shadow is
 // read where it is actually drawn; the foreground rect anchors bounds so a
 // missing or mis-placed shadow is visually obvious.
-func scene(p tokens.PlatformColors, shadow color.NRGBA) layout.Widget {
+func scene(p tokens.PlatformColors, shadow tokens.DropShadow) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
 		paint.FillShape(gtx.Ops, p.WindowBackground, clip.Rect{Max: gtx.Constraints.Max}.Op())
 		depth.Shadow(gtx, boundsRect, 0, shadow)
@@ -50,7 +50,7 @@ func scene(p tokens.PlatformColors, shadow color.NRGBA) layout.Widget {
 // foreground to the same radius. A square interior fill showing
 // through the foreground's rounded corners is a defect only a golden
 // catches.
-func roundedScene(p tokens.PlatformColors, radius int, shadow color.NRGBA) layout.Widget {
+func roundedScene(p tokens.PlatformColors, radius int, shadow tokens.DropShadow) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
 		paint.FillShape(gtx.Ops, p.WindowBackground, clip.Rect{Max: gtx.Constraints.Max}.Op())
 		depth.Shadow(gtx, boundsRect, radius, shadow)
@@ -136,7 +136,7 @@ func TestShadowReachesTheMeasuredDistance(t *testing.T) {
 		depth.Shadow(gtx, boundsRect, 0, p.FloatingShadow)
 		return layout.Dimensions{Size: gtx.Constraints.Max}
 	})
-	reach := 24 // Reach in px at the test's 1:1 metric
+	reach := int(p.FloatingShadow.Reach) // the reading's reach in px at the test's 1:1 metric
 	y := (boundsY0 + boundsY1) / 2
 	at := func(x int) color.NRGBA {
 		i := img.PixOffset(x, y)

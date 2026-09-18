@@ -17,8 +17,11 @@
 //
 // # The measurement
 //
-// The colour, the coverage and the reach are the platform's, not a
-// recommendation: outward from a floating pane's 1 px edge stroke the
+// This package owns no measurement. What it draws is a reading it is
+// handed — a [tokens.DropShadow], a coverage with the reach and the offset it
+// was fitted at — and every one of those is recorded in theme/tokens beside
+// the fill it belongs to. The reading behind a floating surface is the
+// platform's, not a recommendation: outward from a floating pane's 1 px edge stroke the
 // window's #232a2e plane reads #20272b and recovers to #232a2e over 24 px,
 // identically in finder-sidebar-shadow.png and reminders-sidebar-shadow.png
 // in the organization's macOS reference. Black at 0.075 reproduces the
@@ -40,10 +43,13 @@
 // surface byte that lands where the platform's own blend lands to within one
 // 255th, the same bound the ramp was fitted to.
 //
-// The ramp is symmetric around the surface, with no downward bias. The
-// captures are of a vertical edge and show the peak at the pane's own edge;
-// nothing measured supports lighting the shadow from above, so the shadow
-// rectangle is the caller's bounds and not a shifted copy of them.
+// The floating surface's ramp is symmetric around it, with no downward bias:
+// its captures are of a vertical edge and show the peak at the pane's own
+// edge, and nothing measured supports lighting that shadow from above, so its
+// reading carries a zero offset and the shadow rectangle is the caller's
+// bounds. A reading whose own capture is heavier below the shape than over it
+// — the inset panel's — carries the offset that says so, and the rectangle is
+// sunk by it.
 //
 // # Geometry
 //
@@ -80,50 +86,37 @@ import (
 	"gioui.org/unit"
 
 	vgcolor "github.com/vibrantgio/theme/color"
+	"github.com/vibrantgio/theme/tokens"
 )
-
-// Reach is how far the shadow carries past the surface it is cast by, and it
-// is a measurement: the window plane recovers to its own value exactly 24 px
-// out from a floating pane's edge in both stored sidebar-shadow captures. It
-// does not vary with what is floating — the platform draws one shadow.
-const Reach = unit.Dp(24)
 
 // bezierCircle is the cubic-Bézier control-point ratio that best
 // approximates a quarter circle: 4/3·(√2−1).
 const bezierCircle = 0.55228475
 
-// Shadow paints the shadow a floating surface casts around bounds onto
-// gtx.Ops, in shadow at its own coverage at the surface's edge, falling
-// linearly to nothing [Reach] away.
+// Shadow paints the shadow sh casts around bounds onto gtx.Ops: sh.Peak at
+// the edge of sh's own rectangle, falling linearly to nothing sh.Reach away,
+// with that rectangle sunk sh.Offset below bounds.
 //
-// shadow is the platform's FloatingShadow, or a copy of it whose coverage the
-// caller has scaled to fade with the surface. radius rounds the shadow's
-// corners, in pixels: callers pass the radius they round their foreground to,
-// so the interior fill cannot show through the rounding as square wedges, and
-// 0 keeps the square geometry.
+// sh is a reading this package does not own: the platform's FloatingShadow,
+// its PaneShadow, or a copy of one whose coverage the caller has scaled to
+// fade with the surface — see [tokens.DropShadow.WithPeak]. The reach and the
+// offset travel with the coverage because a coverage fitted at one reach is
+// not the same coverage at another.
+//
+// radius rounds the shadow's corners, in pixels: callers pass the radius they
+// round their foreground to, so the interior fill cannot show through the
+// rounding as square wedges, and 0 keeps the square geometry.
 //
 // A zero coverage, or a reach that rounds to zero pixels at the current
 // metric, paints nothing.
-func Shadow(gtx layout.Context, bounds image.Rectangle, radius int, shadow color.NRGBA) {
-	ShadowAt(gtx, bounds, radius, Reach, shadow)
-}
-
-// ShadowAt is [Shadow] with the reach stated by the caller, for a surface
-// whose own capture measures a ramp of another length.
-//
-// [Reach] is the measurement for a floating surface and [Shadow] is the call
-// to make for one. A caller reaches for this only where a stored capture
-// gives it a reach of its own, and passes that measurement; a caller that
-// wants an offset shadow passes bounds already moved by it, since a shadow
-// sunk below the shape it belongs to is that shape's rectangle shifted and
-// nothing else.
-func ShadowAt(gtx layout.Context, bounds image.Rectangle, radius int, reach unit.Dp, shadow color.NRGBA) {
-	extent := gtx.Metric.Dp(reach)
-	if extent <= 0 || shadow.A == 0 {
+func Shadow(gtx layout.Context, bounds image.Rectangle, radius int, sh tokens.DropShadow) {
+	extent := gtx.Metric.Dp(unit.Dp(sh.Reach))
+	if extent <= 0 || sh.Peak.A == 0 {
 		return
 	}
+	shadow := sh.Peak
 
-	shadowBounds := bounds
+	shadowBounds := bounds.Add(image.Pt(0, gtx.Metric.Dp(unit.Dp(sh.Offset))))
 	if radius < 0 {
 		radius = 0
 	}
