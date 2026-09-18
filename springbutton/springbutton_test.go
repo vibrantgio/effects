@@ -7,10 +7,14 @@ import (
 
 	"gioui.org/layout"
 	"gioui.org/op"
+	"gioui.org/op/clip"
+	"gioui.org/op/paint"
 	"gioui.org/unit"
 
 	"github.com/reactivego/rx"
 	"github.com/vibrantgio/components/button"
+	"github.com/vibrantgio/components/golden"
+	"github.com/vibrantgio/components/icons"
 	"github.com/vibrantgio/effects/spring"
 	"github.com/vibrantgio/effects/springbutton"
 	"github.com/vibrantgio/theme/theme"
@@ -106,5 +110,72 @@ func TestSpringSettlesOnReleaseWithin500ms(t *testing.T) {
 	if got := math.Abs(sp.Value() - 1.0); got > 0.005 {
 		t.Errorf("after 500 ms release, |scale - 1.0| = %v, want <= 0.005 (value=%v)",
 			got, sp.Value())
+	}
+}
+
+// TestTheChromeSpringButtonRecordsItsState is the state's own guard at the
+// pixels: a spring button handed a symbol in a chrome region draws the
+// platform's bordered toolbar control, and a control that records a yes draws
+// the chosen segment's patch inside its own box.
+//
+// It is pinned against the static chrome button rather than against a stored
+// image, because that is the claim: the spring variant is the same control
+// with a scale on press, so at rest — the spring starts settled at 1.0 and the
+// affine is the identity — it has to be the static drawing pixel for pixel, in
+// both states. The two states are also required to differ, or the pin would
+// pass on a control that drew the patch in neither.
+func TestTheChromeSpringButtonRecordsItsState(t *testing.T) {
+	th := theme.Default()
+	colors, err := th.Platform.First()
+	if err != nil {
+		t.Fatalf("theme platform colours: %v", err)
+	}
+	density, err := th.Density.First()
+	if err != nil {
+		t.Fatalf("theme density: %v", err)
+	}
+
+	size := image.Pt(80, 60)
+	mark := icons.Mark(icons.Sidebar)
+	if mark == nil {
+		t.Fatal("no painter for the sidebar")
+	}
+
+	shot := func(w layout.Widget) *image.RGBA {
+		return golden.Capture(t, size, func(gtx layout.Context) layout.Dimensions {
+			paint.FillShape(gtx.Ops, colors.SidebarMaterial, clip.Rect{Max: gtx.Constraints.Max}.Op())
+			defer op.Offset(image.Pt(12, 12)).Push(gtx.Ops).Pop()
+			return w(gtx)
+		})
+	}
+
+	var states [2]*image.RGBA
+	for i, checked := range [2]bool{false, true} {
+		props := button.Props{
+			Description: "Hide the conversations",
+			Variant:     button.Chrome,
+			Surface:     colors.SidebarMaterial,
+			Icon:        mark,
+			Checked:     checked,
+		}
+		spring, err := springbutton.SpringButton(rx.Of(th), props, springbutton.Options{}).First()
+		if err != nil {
+			t.Fatalf("checked=%v: First() = %v", checked, err)
+		}
+		static := button.RenderChrome(mark, colors, density, button.RenderState{
+			Variant: button.Chrome,
+			Surface: colors.SidebarMaterial,
+			Checked: checked,
+		})
+		got, want := shot(spring), shot(static)
+		if n := golden.PixelDiff(got, want); n != 0 {
+			t.Errorf("checked=%v: the spring button differs from the static chrome button in %d pixels — "+
+				"at rest the two are one control", checked, n)
+		}
+		states[i] = got
+	}
+
+	if n := golden.PixelDiff(states[0], states[1]); n == 0 {
+		t.Error("the spring button drew the same control switched on and off, so it records no state")
 	}
 }

@@ -63,16 +63,26 @@ func TestRenderStateForwardsEveryFieldPropsCarries(t *testing.T) {
 // TestRenderStateKeepsTheInteractionHalf pins the other direction: the fields
 // that come off the live clickable rather than off Props must survive the copy
 // untouched.
+//
+// Which fields those are is asked of reflection rather than listed, the same
+// way round as the test above: a RenderState field Props also carries by name
+// and type is Props' to supply — the emphasis, the variant, the recorded yes —
+// and the test above is the one that guards it. What is left is the
+// interaction half, and none of it may be overwritten.
 func TestRenderStateKeepsTheInteractionHalf(t *testing.T) {
-	in := button.RenderState{Hovered: true, Focused: true, Pressed: true, Disabled: true, Checked: true}
+	in := button.RenderState{Hovered: true, Focused: true, Pressed: true, Disabled: true}
 	got := renderState(button.Props{}, in)
 
+	propsT := reflect.TypeOf(button.Props{})
 	iv, gv := reflect.ValueOf(in), reflect.ValueOf(got)
 	st := iv.Type()
 	for i := range st.NumField() {
 		f := st.Field(i)
 		if f.Type.Kind() != reflect.Bool {
-			continue // the emphasis comes from Props; the other test owns it
+			continue
+		}
+		if pf, ok := propsT.FieldByName(f.Name); ok && pf.Type == f.Type {
+			continue
 		}
 		if !gv.Field(i).Bool() {
 			t.Errorf("renderState dropped the interaction field %s", f.Name)

@@ -316,6 +316,7 @@ func renderState(props button.Props, interaction button.RenderState) button.Rend
 	s.Surface = props.Surface
 	s.Fill = props.Fill
 	s.Foreground = props.Foreground
+	s.Checked = props.Checked
 	return s
 }
 
