@@ -86,6 +86,7 @@ func LerpPlatformColors(from, to tokens.PlatformColors, t float64) tokens.Platfo
 		SidebarMaterial:                       tween.LerpNRGBA(from.SidebarMaterial, to.SidebarMaterial, t),
 		SidebarSelection:                      tween.LerpNRGBA(from.SidebarSelection, to.SidebarSelection, t),
 		SidebarCount:                          tween.LerpNRGBA(from.SidebarCount, to.SidebarCount, t),
+		SidebarSymbol:                         tween.LerpNRGBA(from.SidebarSymbol, to.SidebarSymbol, t),
 		CardFill:                              tween.LerpNRGBA(from.CardFill, to.CardFill, t),
 		PushButtonFill:                        tween.LerpNRGBA(from.PushButtonFill, to.PushButtonFill, t),
 		HoverOverlay:                          tween.LerpNRGBA(from.HoverOverlay, to.HoverOverlay, t),
