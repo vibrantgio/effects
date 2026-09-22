@@ -85,6 +85,8 @@ func LerpPlatformColors(from, to tokens.PlatformColors, t float64) tokens.Platfo
 		Highlight:                             tween.LerpNRGBA(from.Highlight, to.Highlight, t),
 		SidebarMaterial:                       tween.LerpNRGBA(from.SidebarMaterial, to.SidebarMaterial, t),
 		SidebarSelection:                      tween.LerpNRGBA(from.SidebarSelection, to.SidebarSelection, t),
+		SidebarSelectionUnemphasized:          tween.LerpNRGBA(from.SidebarSelectionUnemphasized, to.SidebarSelectionUnemphasized, t),
+		SidebarSelectionUnemphasizedLabel:     tween.LerpNRGBA(from.SidebarSelectionUnemphasizedLabel, to.SidebarSelectionUnemphasizedLabel, t),
 		SidebarCount:                          tween.LerpNRGBA(from.SidebarCount, to.SidebarCount, t),
 		SidebarSymbol:                         tween.LerpNRGBA(from.SidebarSymbol, to.SidebarSymbol, t),
 		CardFill:                              tween.LerpNRGBA(from.CardFill, to.CardFill, t),
