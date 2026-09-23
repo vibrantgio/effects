@@ -240,7 +240,7 @@ func SpringButton(
 				// Props.Variant Chrome and a symbol draws the toolbar
 				// control, never the form button under another name.
 				iconOnly := props.Icon != nil && props.Label == ""
-				chrome := iconOnly && state.Variant == button.Chrome
+				chromeSymbol := iconOnly && state.Variant == button.Chrome
 
 				face := func(gtx layout.Context) layout.Dimensions {
 					semantic.ClassOp(semantic.Button).Add(gtx.Ops)
@@ -248,8 +248,8 @@ func SpringButton(
 					semantic.DescriptionOp(desc).Add(gtx.Ops)
 					semantic.EnabledOp(!dis).Add(gtx.Ops)
 					switch {
-					case chrome:
-						return button.ChromeFace(props.Icon, tok.platform, tok.radius, tok.density, state)(gtx)
+					case chromeSymbol:
+						return button.BorderedFace(props.Icon, tok.platform, tok.radius, tok.density, state)(gtx)
 					case iconOnly:
 						return button.RenderIcon(props.Icon,
 							tok.platform, tok.spacing, tok.radius, tok.density, state)(gtx)
@@ -274,8 +274,8 @@ func SpringButton(
 				// clickable clips what it wraps to that box.
 				macro := op.Record(gtx.Ops)
 				var innerDims layout.Dimensions
-				if chrome {
-					innerDims = button.ChromeShadow(gtx, tok.platform, state, func(gtx layout.Context) layout.Dimensions {
+				if chromeSymbol {
+					innerDims = button.BorderedShadow(gtx, tok.platform, state, func(gtx layout.Context) layout.Dimensions {
 						return click.Layout(gtx, face)
 					})
 				} else {
@@ -313,7 +313,6 @@ func renderState(props button.Props, interaction button.RenderState) button.Rend
 	s := interaction
 	s.Emphasis = props.Emphasis
 	s.Variant = props.Variant
-	s.Place = props.Place
 	s.Surface = props.Surface
 	s.Fill = props.Fill
 	s.Foreground = props.Foreground

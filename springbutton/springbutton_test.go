@@ -163,7 +163,7 @@ func TestTheChromeSpringButtonRecordsItsState(t *testing.T) {
 		if err != nil {
 			t.Fatalf("checked=%v: First() = %v", checked, err)
 		}
-		static := button.RenderChrome(mark, colors, tokens.Radius, density, button.RenderState{
+		static := button.RenderBordered(mark, colors, tokens.Radius, density, button.RenderState{
 			Variant: button.Chrome,
 			Surface: colors.SidebarMaterial,
 			Checked: checked,
