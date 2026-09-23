@@ -2,3 +2,7 @@
 # golden it did not match, never a stored comparison. They must not be
 # committed — a stale one reads as a golden during a sweep.
 *.actual.png
+
+# Windows cross-builds: `GOOS=windows go build ./...` writes one beside each
+# main package in the module. Artifacts, never source.
+*.exe
