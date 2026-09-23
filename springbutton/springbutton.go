@@ -249,7 +249,7 @@ func SpringButton(
 					semantic.EnabledOp(!dis).Add(gtx.Ops)
 					switch {
 					case chrome:
-						return button.ChromeFace(props.Icon, tok.platform, tok.density, state)(gtx)
+						return button.ChromeFace(props.Icon, tok.platform, tok.radius, tok.density, state)(gtx)
 					case iconOnly:
 						return button.RenderIcon(props.Icon,
 							tok.platform, tok.spacing, tok.radius, tok.density, state)(gtx)

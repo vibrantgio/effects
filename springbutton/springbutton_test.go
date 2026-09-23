@@ -18,6 +18,7 @@ import (
 	"github.com/vibrantgio/effects/spring"
 	"github.com/vibrantgio/effects/springbutton"
 	"github.com/vibrantgio/theme/theme"
+	"github.com/vibrantgio/theme/tokens"
 )
 
 // TestSpringButtonObservableEmits is the construction smoke test: the
@@ -162,7 +163,7 @@ func TestTheChromeSpringButtonRecordsItsState(t *testing.T) {
 		if err != nil {
 			t.Fatalf("checked=%v: First() = %v", checked, err)
 		}
-		static := button.RenderChrome(mark, colors, density, button.RenderState{
+		static := button.RenderChrome(mark, colors, tokens.Radius, density, button.RenderState{
 			Variant: button.Chrome,
 			Surface: colors.SidebarMaterial,
 			Checked: checked,
