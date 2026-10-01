@@ -1,8 +1,8 @@
-// Package glow renders luminance halos around rectangular regions by
+// Package glow renders luminance spreads around rectangular regions by
 // composing linear gradients.
 //
-// A halo is a soft luminous fringe extending Radius pixels outside a
-// bounds rectangle, fading from the halo colour at the inner edge to
+// A spread is a soft luminous fringe extending Radius pixels outside a
+// bounds rectangle, fading from the spread colour at the inner edge to
 // fully transparent at the outer edge. Gio's render pipeline only
 // exposes [paint.LinearGradientOp] (no native radial gradient), so
 // glow approximates a radial falloff by composing eight linear
@@ -11,7 +11,7 @@
 //
 // # Geometry
 //
-// The halo region is the strip between bounds and bounds expanded by
+// The spread region is the strip between bounds and bounds expanded by
 // Radius. It splits into eight axis-aligned tiles:
 //
 //	+-------+-------------+-------+
@@ -33,36 +33,36 @@
 // alpha boundary between corner and edge tiles without double-paint.
 //
 // The interior of bounds is never touched: callers that want the
-// halo to sit beneath a foreground shape should call [Halo] first
+// spread to sit beneath a foreground shape should call [Spread] first
 // and then draw the shape on top.
 //
 // # What the caller has to handle
 //
-// [Halo] draws entirely outside bounds and returns nothing. It is not a
+// [Spread] draws entirely outside bounds and returns nothing. It is not a
 // [layout.Widget] and it reserves no space, so in a [layout.Flex] the
-// halo spills over whatever sits next to it unless the caller either
+// spread spills over whatever sits next to it unless the caller either
 // insets by Radius to make room or pushes a [clip.Rect] to cut it off.
 // Nothing in this package can do that for you — it does not know what
 // bounds means in the surrounding layout.
 //
 // [Options.Radius] is in pixels, not dp. The same Radius is a visibly
-// wider halo on a 1x display than on a 2x one, which is backwards from
+// wider spread on a 1x display than on a 2x one, which is backwards from
 // every other size in the design system; convert with gtx.Dp first if
-// the halo should look the same at both densities.
+// the spread should look the same at both densities.
 //
 // The falloff is an approximation twice over. Eight linear gradients
 // are not a radial gradient — the alpha along a diagonal differs from
 // the alpha at the same distance along an axis — and the shape is
-// always the bounds rectangle, so a halo around a rounded or circular
+// always the bounds rectangle, so a spread around a rounded or circular
 // foreground is squared off at the corners.
 //
 // # Falloff characteristics
 //
 // The rim is chamfered: the corner tiles' far stop sits at Radius/√2,
 // so the diagonal falloff dies at ~0.71·Radius with a C0 kink, an
-// octagonal rim that grows more obvious with Radius. Measured halo
+// octagonal rim that grows more obvious with Radius. Measured spread
 // coverage over a dark background at Radius 16 (0 = background,
-// 1 = opaque halo): at 0.75·Radius the gradient reads 0.43 along an
+// 1 = opaque spread): at 0.75·Radius the gradient reads 0.43 along an
 // edge normal but 0.00 along the 45° diagonal, where a Gaussian blur
 // reads a consistent 0.02/0.005.
 //
@@ -77,7 +77,7 @@
 // blurglow_test.go and ship no API.
 //
 // Blurring is also not a drop-in: blurring a step edge halves it, so a
-// blur halo's inner rim renders at 0.39 coverage where the gradient
+// blur spread's inner rim renders at 0.39 coverage where the gradient
 // renders 0.99, and a replacement would need intensity compensation or
 // pre-blur shape dilation.
 package glow
@@ -92,30 +92,30 @@ import (
 	"gioui.org/op/paint"
 )
 
-// Options configures a single [Halo] call.
+// Options configures a single [Spread] call.
 type Options struct {
-	// Color is the halo's luminance colour. The alpha channel scales
+	// Color is the spread's luminance colour. The alpha channel scales
 	// the inner-edge alpha; pass alpha 255 for a fully opaque inner
 	// edge and use [Options.Intensity] to dim it.
 	Color color.NRGBA
 
-	// Radius is the halo extent in pixels — how far the luminance
-	// bleeds beyond bounds. Zero or negative produces no halo.
+	// Radius is the spread extent in pixels — how far the luminance
+	// bleeds beyond bounds. Zero or negative produces no spread.
 	Radius int
 
 	// Intensity is the peak alpha multiplier in [0, 1] applied at the
 	// inner edge. Values outside the range are clamped: <= 0 produces
-	// no halo, > 1 is treated as 1.
+	// no spread, > 1 is treated as 1.
 	Intensity float64
 }
 
-// Halo paints a luminance halo around bounds onto gtx.Ops, composing
-// eight linear gradients (four edges, four corners). The halo is
+// Spread paints a luminance spread around bounds onto gtx.Ops, composing
+// eight linear gradients (four edges, four corners). The spread is
 // painted in the region outside bounds and never overlaps the
 // interior; bounds itself is left untouched.
 //
-// Halo is a no-op when Radius <= 0 or Intensity <= 0.
-func Halo(gtx layout.Context, bounds image.Rectangle, opts Options) {
+// Spread is a no-op when Radius <= 0 or Intensity <= 0.
+func Spread(gtx layout.Context, bounds image.Rectangle, opts Options) {
 	if opts.Radius <= 0 || opts.Intensity <= 0 {
 		return
 	}

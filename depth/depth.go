@@ -48,7 +48,7 @@
 // edge, and nothing measured supports lighting that shadow from above, so its
 // reading carries a zero offset and the shadow rectangle is the caller's
 // bounds. A reading whose own capture is heavier below the shape than over it
-// — the inset panel's — carries the offset that says so, and the rectangle is
+// — the inset pane's — carries the offset that says so, and the rectangle is
 // sunk by it.
 //
 // # Geometry

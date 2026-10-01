@@ -1,7 +1,7 @@
 package glow_test
 
 // The blur-based glow prototype, its falloff comparison against the
-// shipped eight-gradient halo, and the cost benchmarks recorded in the
+// shipped eight-gradient spread, and the cost benchmarks recorded in the
 // package doc. The prototype is test-only on purpose: nothing here
 // ships as API.
 
@@ -25,7 +25,7 @@ import (
 )
 
 // blurglowDump, when set to a directory, makes the falloff-comparison
-// test write side-by-side PNGs of the gradient and blur halos there.
+// test write side-by-side PNGs of the gradient and blur spreads there.
 var blurglowDump = flag.String("blurglow.dump", "", "directory to write blur-vs-gradient comparison PNGs")
 
 // blurSigma maps the gradient path's Radius to the prototype's blur
@@ -34,15 +34,15 @@ var blurglowDump = flag.String("blurglow.dump", "", "directory to write blur-vs-
 // visible extents.
 func blurSigma(radius int) float64 { return float64(radius) / 2 }
 
-// rasterHaloShape fills the halo shape — the bounds rectangle at peak
-// alpha — into dst. The colour planes are filled with the halo colour
+// rasterSpreadShape fills the spread shape — the bounds rectangle at peak
+// alpha — into dst. The colour planes are filled with the spread colour
 // over the WHOLE image, not just the shape: effects/blur blurs straight-
 // alpha channels independently (its documented translucency caveat),
 // so blurring a coloured shape over transparent black would bleed
-// black into the halo and dim it to roughly alpha². Keeping the colour
+// black into the spread and dim it to roughly alpha². Keeping the colour
 // planes uniform makes the straight-alpha blur premultiplied-correct
 // for this single-colour source; only alpha carries the shape.
-func rasterHaloShape(dst *image.NRGBA, bounds image.Rectangle, opts glow.Options) {
+func rasterSpreadShape(dst *image.NRGBA, bounds image.Rectangle, opts glow.Options) {
 	inner := opts.Color
 	intensity := opts.Intensity
 	if intensity > 1 {
@@ -66,19 +66,19 @@ func rasterHaloShape(dst *image.NRGBA, bounds image.Rectangle, opts glow.Options
 	}
 }
 
-// blurHalo is the prototype pipeline for one frame: rasterize the
+// blurSpread is the prototype pipeline for one frame: rasterize the
 // shape, blur it in place, wrap it as a paint op. The NRGBA buffer is
 // caller-owned and reused across frames; the ImageOp conversion
 // (NewImageOp copies NRGBA into a fresh premultiplied RGBA) is part of
 // the honest per-frame cost, as is the GPU texture upload it implies.
-func blurHalo(buf *image.NRGBA, bounds image.Rectangle, opts glow.Options, blurrer *blur.Blurrer) paint.ImageOp {
-	rasterHaloShape(buf, bounds, opts)
+func blurSpread(buf *image.NRGBA, bounds image.Rectangle, opts glow.Options, blurrer *blur.Blurrer) paint.ImageOp {
+	rasterSpreadShape(buf, bounds, opts)
 	blurrer.Gaussian(buf, buf, blurSigma(opts.Radius))
 	return paint.NewImageOp(buf)
 }
 
 // blurScene composes the same fixture as scene() but with the blur
-// prototype in place of glow.Halo: dark backdrop, blurred halo image,
+// prototype in place of glow.Spread: dark backdrop, blurred spread image,
 // black foreground rect on top (covering the blur's inward bleed).
 func blurScene(imgOp paint.ImageOp, bounds image.Rectangle) layout.Widget {
 	return func(gtx layout.Context) layout.Dimensions {
@@ -90,13 +90,13 @@ func blurScene(imgOp paint.ImageOp, bounds image.Rectangle) layout.Widget {
 	}
 }
 
-// frac normalizes a rendered red-channel byte to halo coverage in
-// [0, 1]: 0 at the dark background, 1 at a fully opaque white halo.
+// frac normalizes a rendered red-channel byte to spread coverage in
+// [0, 1]: 0 at the dark background, 1 at a fully opaque white spread.
 func frac(r uint8) float64 {
 	return (float64(r) - float64(bgColor.R)) / (255 - float64(bgColor.R))
 }
 
-// edgeProfile samples halo coverage along the outward normal of the
+// edgeProfile samples spread coverage along the outward normal of the
 // right bounds edge at mid-height: index d is d pixels outside bounds.
 func edgeProfile(img *image.RGBA, bounds image.Rectangle, n int) []float64 {
 	y := (bounds.Min.Y + bounds.Max.Y) / 2
@@ -108,7 +108,7 @@ func edgeProfile(img *image.RGBA, bounds image.Rectangle, n int) []float64 {
 	return p
 }
 
-// cornerProfile samples halo coverage along the 45° diagonal from the
+// cornerProfile samples spread coverage along the 45° diagonal from the
 // bottom-right corner: index d is Euclidean distance d from the corner.
 func cornerProfile(img *image.RGBA, bounds image.Rectangle, n int) []float64 {
 	p := make([]float64, n)
@@ -125,7 +125,7 @@ func cornerProfile(img *image.RGBA, bounds image.Rectangle, n int) []float64 {
 // package doc:
 //
 //   - inner edge: the gradient starts at peak alpha flush with bounds;
-//     the blur of a step edge starts at ~half, so the blur halo's
+//     the blur of a step edge starts at ~half, so the blur spread's
 //     visible inner rim is roughly half as bright at equal Intensity.
 //   - corners: the gradient's diagonal falloff hits zero at Radius/√2
 //     (~0.71R) while its edge falloff runs to R — an anisotropic rim
@@ -133,21 +133,21 @@ func cornerProfile(img *image.RGBA, bounds image.Rectangle, n int) []float64 {
 //     above background beyond 0.71R on the diagonal.
 //   - smoothness: both blur profiles are monotone non-increasing.
 func TestBlurGlowFalloffComparison(t *testing.T) {
-	opts := glow.Options{Color: haloColor, Radius: haloRadius, Intensity: 1}
+	opts := glow.Options{Color: spreadColor, Radius: spreadRadius, Intensity: 1}
 
-	gradImg := golden.Capture(t, frameSize, scene(haloBounds, opts))
+	gradImg := golden.Capture(t, frameSize, scene(spreadBounds, opts))
 	buf := image.NewNRGBA(image.Rectangle{Max: frameSize})
 	var blurrer blur.Blurrer
-	imgOp := blurHalo(buf, haloBounds, opts, &blurrer)
-	blurImg := golden.Capture(t, frameSize, blurScene(imgOp, haloBounds))
+	imgOp := blurSpread(buf, spreadBounds, opts, &blurrer)
+	blurImg := golden.Capture(t, frameSize, blurScene(imgOp, spreadBounds))
 
-	const n = haloRadius + 5
-	gradEdge := edgeProfile(gradImg, haloBounds, n)
-	gradCorner := cornerProfile(gradImg, haloBounds, n)
-	blurEdge := edgeProfile(blurImg, haloBounds, n)
-	blurCorner := cornerProfile(blurImg, haloBounds, n)
+	const n = spreadRadius + 5
+	gradEdge := edgeProfile(gradImg, spreadBounds, n)
+	gradCorner := cornerProfile(gradImg, spreadBounds, n)
+	blurEdge := edgeProfile(blurImg, spreadBounds, n)
+	blurCorner := cornerProfile(blurImg, spreadBounds, n)
 
-	t.Logf("halo coverage by distance outside bounds (R=%d, sigma=%.1f):", haloRadius, blurSigma(haloRadius))
+	t.Logf("spread coverage by distance outside bounds (R=%d, sigma=%.1f):", spreadRadius, blurSigma(spreadRadius))
 	t.Logf("%4s  %-10s %-10s  %-10s %-10s", "d", "grad-edge", "grad-45deg", "blur-edge", "blur-45deg")
 	for d := 0; d < n; d += 2 {
 		t.Logf("%4d  %-10.3f %-10.3f  %-10.3f %-10.3f", d, gradEdge[d], gradCorner[d], blurEdge[d], blurCorner[d])
@@ -165,7 +165,7 @@ func TestBlurGlowFalloffComparison(t *testing.T) {
 	// diagonal the corner tile has already faded out (its far stop is
 	// at R/√2 ≈ 0.71R) while the edge at the same distance is still
 	// clearly lit — a corner-vs-edge gap the blur does not have.
-	d75 := haloRadius * 3 / 4
+	d75 := spreadRadius * 3 / 4
 	if gradCorner[d75] > 0.03 {
 		t.Errorf("gradient 45° coverage at 0.75R = %.3f, want ~0 (corner stop at R/√2)", gradCorner[d75])
 	}
@@ -205,16 +205,16 @@ func dumpComparison(t *testing.T, gradImg, blurImg *image.RGBA) {
 			t.Fatalf("save %s: %v", path, err)
 		}
 	}
-	save("gradient-halo.png", gradImg)
-	save("blur-halo.png", blurImg)
+	save("gradient-spread.png", gradImg)
+	save("blur-spread.png", blurImg)
 
 	big := image.Pt(3*frameW, 3*frameH)
 	bigBounds := image.Rect(3*boundsX0, 3*boundsY0, 3*boundsX1, 3*boundsY1)
-	bigOpts := glow.Options{Color: haloColor, Radius: 3 * haloRadius, Intensity: 1}
-	save("gradient-halo-3x.png", golden.Capture(t, big, scene(bigBounds, bigOpts)))
+	bigOpts := glow.Options{Color: spreadColor, Radius: 3 * spreadRadius, Intensity: 1}
+	save("gradient-spread-3x.png", golden.Capture(t, big, scene(bigBounds, bigOpts)))
 	buf := image.NewNRGBA(image.Rectangle{Max: big})
 	var blurrer blur.Blurrer
-	save("blur-halo-3x.png", golden.Capture(t, big, blurScene(blurHalo(buf, bigBounds, bigOpts, &blurrer), bigBounds)))
+	save("blur-spread-3x.png", golden.Capture(t, big, blurScene(blurSpread(buf, bigBounds, bigOpts, &blurrer), bigBounds)))
 }
 
 // ---- cost benchmarks ----
@@ -224,54 +224,54 @@ func dumpComparison(t *testing.T, gradImg, blurImg *image.RGBA) {
 // construction and the full prototype pipeline runs per frame. The
 // gradient path's per-frame cost is op construction alone.
 
-// BenchmarkGradientHaloOps is the shipped path's entire per-frame CPU
+// BenchmarkGradientSpreadOps is the shipped path's entire per-frame CPU
 // cost: recording eight gradient tiles into an op list.
-func BenchmarkGradientHaloOps(b *testing.B) {
+func BenchmarkGradientSpreadOps(b *testing.B) {
 	var ops op.Ops
 	gtx := layout.Context{Constraints: layout.Exact(frameSize), Ops: &ops}
-	opts := glow.Options{Color: haloColor, Radius: haloRadius, Intensity: 1}
+	opts := glow.Options{Color: spreadColor, Radius: spreadRadius, Intensity: 1}
 	b.ReportAllocs()
 	for b.Loop() {
 		ops.Reset()
-		glow.Halo(gtx, haloBounds, opts)
+		glow.Spread(gtx, spreadBounds, opts)
 	}
 }
 
-// benchmarkBlurHaloRaster measures the prototype's per-frame CPU cost
+// benchmarkBlurSpreadRaster measures the prototype's per-frame CPU cost
 // for a bw×bh px glow shape with the given radius: rasterize + blur +
 // NewImageOp (which copies NRGBA into a fresh premultiplied RGBA). The
 // GPU texture upload each fresh ImageOp implies at draw time is on top
 // of this and not measured here.
-func benchmarkBlurHaloRaster(b *testing.B, bw, bh, radius int) {
+func benchmarkBlurSpreadRaster(b *testing.B, bw, bh, radius int) {
 	frame := image.Pt(bw+2*radius, bh+2*radius)
 	bounds := image.Rect(radius, radius, radius+bw, radius+bh)
-	opts := glow.Options{Color: haloColor, Radius: radius, Intensity: 1}
+	opts := glow.Options{Color: spreadColor, Radius: radius, Intensity: 1}
 	buf := image.NewNRGBA(image.Rectangle{Max: frame})
 	var blurrer blur.Blurrer
 	b.ReportAllocs()
 	for b.Loop() {
-		blurHalo(buf, bounds, opts, &blurrer)
+		blurSpread(buf, bounds, opts, &blurrer)
 	}
 }
 
 // Button-sized glow: 100×40 shape, radius 16 (image 132×72).
-func BenchmarkBlurHaloRaster132x72(b *testing.B) { benchmarkBlurHaloRaster(b, 100, 40, 16) }
+func BenchmarkBlurSpreadRaster132x72(b *testing.B) { benchmarkBlurSpreadRaster(b, 100, 40, 16) }
 
 // Card-sized glow: 300×96 shape, radius 24 (image 348×144).
-func BenchmarkBlurHaloRaster348x144(b *testing.B) { benchmarkBlurHaloRaster(b, 300, 96, 24) }
+func BenchmarkBlurSpreadRaster348x144(b *testing.B) { benchmarkBlurSpreadRaster(b, 300, 96, 24) }
 
-// BenchmarkBlurHaloBackdrop132x72 is the general-shape variant of the
+// BenchmarkBlurSpreadBackdrop132x72 is the general-shape variant of the
 // prototype: instead of a CPU raster of a rectangle, the shape is
 // rendered by the GPU through blur.Backdrop (headless render +
 // readback + blur), which is what an arbitrary clip-path glow would
 // need. Divisor 1: at button sizes there is nothing to downscale.
-func BenchmarkBlurHaloBackdrop132x72(b *testing.B) {
+func BenchmarkBlurSpreadBackdrop132x72(b *testing.B) {
 	if !blur.Available() {
 		b.Skip("headless rendering not supported")
 	}
 	frame := image.Pt(132, 72)
 	bounds := image.Rect(16, 16, 116, 56)
-	inner := haloColor
+	inner := spreadColor
 	layer := func(ops *op.Ops) {
 		paint.FillShape(ops, inner, clip.Rect(bounds).Op())
 	}
@@ -309,20 +309,20 @@ func benchmarkAnimatedFrame(b *testing.B, build func(ops *op.Ops)) {
 	}
 }
 
-func BenchmarkGradientHaloAnimatedFrame(b *testing.B) {
-	opts := glow.Options{Color: haloColor, Radius: haloRadius, Intensity: 1}
+func BenchmarkGradientSpreadAnimatedFrame(b *testing.B) {
+	opts := glow.Options{Color: spreadColor, Radius: spreadRadius, Intensity: 1}
 	benchmarkAnimatedFrame(b, func(ops *op.Ops) {
 		gtx := layout.Context{Constraints: layout.Exact(frameSize), Ops: ops}
-		scene(haloBounds, opts)(gtx)
+		scene(spreadBounds, opts)(gtx)
 	})
 }
 
-func BenchmarkBlurHaloAnimatedFrame(b *testing.B) {
-	opts := glow.Options{Color: haloColor, Radius: haloRadius, Intensity: 1}
+func BenchmarkBlurSpreadAnimatedFrame(b *testing.B) {
+	opts := glow.Options{Color: spreadColor, Radius: spreadRadius, Intensity: 1}
 	buf := image.NewNRGBA(image.Rectangle{Max: frameSize})
 	var blurrer blur.Blurrer
 	benchmarkAnimatedFrame(b, func(ops *op.Ops) {
 		gtx := layout.Context{Constraints: layout.Exact(frameSize), Ops: ops}
-		blurScene(blurHalo(buf, haloBounds, opts, &blurrer), haloBounds)(gtx)
+		blurScene(blurSpread(buf, spreadBounds, opts, &blurrer), spreadBounds)(gtx)
 	})
 }

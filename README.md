@@ -68,7 +68,7 @@ github.com/reactivego/rx v0.3.0 and Go 1.25.1.
 | `transition` | Interpolates a whole `tokens.ColorTokens` set between two values, so a light-to-dark flip can cross-fade rather than snap. Moved here from spectrum in the G-B3 inversion; the `spectrum/transition` alias that forwarded here is deleted as of spectrum v0.2.0. |
 | `blur` | The blur Gio does not have: a parallel three-pass box approximation of a Gaussian (`Gaussian`, `Blurrer`), `Cache` for static imagery blurred once and reused, and `Backdrop` — the "blurred behind the dialog" pipeline on `gioui.org/gpu/headless`, with `FallbackOp` and `Available` for the platforms where headless rendering is not. |
 | `depth` | A cast shadow under a rectangle, composed from eight linear gradients, with extent and offset read from a `tokens.ElevationLevel`. Opt-in vibrancy per ADR-005: a shadow marks what floats and can leave — a toast, a popover, a menu — never what is raised in place, which reads as raised by its surface step alone. The E2.2 caller audit is recorded in the package doc. |
-| `glow` | A luminance halo around a rectangle, composed from eight linear gradients standing in for the radial gradient Gio does not expose. The E4.4 verdict — why an animated glow is gradients, not blur — is recorded in the package doc, with the measurements. |
+| `glow` | A luminance spread around a rectangle, composed from eight linear gradients standing in for the radial gradient Gio does not expose. The E4.4 verdict — why an animated glow is gradients, not blur — is recorded in the package doc, with the measurements. |
 | `conductor` | A shared frame counter, so a staggered wave stays phase-locked. Independent per-component simulations drift; participants reading `Local(offset)` off one clock do not. |
 
 ## Usage
@@ -182,8 +182,8 @@ contracts to honour:
 rejected (E4.4; the evidence is in `glow`'s package doc): an animating
 blur-glow costs 0.2–0.8 ms of events-thread CPU plus an allocation and a
 texture upload per glow per frame, against ~0.5 µs for `glow`'s
-eight-gradient halo, and no cache holds while the radius or intensity
-animates. Use `glow` for halos — a correct approximation beats a slow exact
+eight-gradient spread, and no cache holds while the radius or intensity
+animates. Use `glow` for spreads — a correct approximation beats a slow exact
 answer.
 
 ## For coding assistants
@@ -241,7 +241,7 @@ estimated.
   filled with the platform's own value, and this package is the
   explicit opt-in for
   the surfaces that float, not the default way to raise anything.
-- **`glow` reserves no space and measures in pixels.** `Halo` draws outside
+- **`glow` reserves no space and measures in pixels.** `Spread` draws outside
   the bounds it is given and returns nothing, so in a flex it spills over its
   neighbours unless the caller insets or clips; and `Options.Radius` is raw
   pixels rather than dp, which is backwards from every other size in the
