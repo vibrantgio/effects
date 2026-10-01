@@ -50,7 +50,7 @@
 //
 // # Fonts
 //
-// The label is shaped with the theme's cached shaper
+// The title is shaped with the theme's cached shaper
 // (Typography.Shaper()) in the LabelLarge role; the theme owns the
 // typeface. That shaper is built once for the process and shared by
 // every component reading the same typography: the cache lives behind
@@ -130,7 +130,7 @@ type Options struct {
 
 // SpringButton returns an rx.Observable[layout.Widget] that renders
 // the components button.Button visual with a spring-driven scale on press/release.
-// All [button.Props] fields are honoured (label, description, disabled
+// All [button.Props] fields are honoured (title, description, disabled
 // observable, OnClick, Message, custom Shaper) — the FRP and MVU
 // integration paths from components/button continue to work unchanged.
 func SpringButton(
@@ -166,7 +166,7 @@ func SpringButton(
 				typ := n.Second
 				return resolvedTokens{
 					platform: n.First,
-					label:    typ.LabelLarge,
+					title:    typ.LabelLarge,
 					spacing:  n.Third,
 					radius:   n.Fourth,
 					density:  n.Fifth,
@@ -232,7 +232,7 @@ func SpringButton(
 				if desc == "" {
 					desc = props.Title
 				}
-				// A button whose label is a symbol is a different drawing
+				// A button whose title is a symbol is a different drawing
 				// from one carrying text, and in a chrome region it is the
 				// platform's bordered toolbar control. The static button
 				// picks between the three by the same two facts, and this
@@ -261,7 +261,7 @@ func SpringButton(
 						shaper,
 						props.Title,
 						tok.platform, tok.spacing, tok.radius,
-						tok.label, tok.density,
+						tok.title, tok.density,
 						state,
 					)(gtx)
 				}
@@ -326,7 +326,7 @@ func renderState(props button.Props, interaction button.RenderState) button.Rend
 // at scale = 1.
 type resolvedTokens struct {
 	platform tokens.PlatformColors
-	label    tokens.TextStyle // the LabelLarge role: typeface, weight, size, line height
+	title    tokens.TextStyle // the LabelLarge role: typeface, weight, size, line height
 	spacing  tokens.SpacingScale
 	radius   tokens.RadiusScale
 	density  tokens.Density // control height and inner padding

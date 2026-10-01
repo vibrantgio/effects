@@ -30,7 +30,7 @@
 // component animates and the dependency runs effects → components and never
 // back. [Apply] is the mechanism: wrap a components render function with it.
 //
-//	bw := button.Render(shaper, label, colors, sp, rad, labelStyle, density, btnState)
+//	bw := button.Render(shaper, title, colors, sp, rad, titleStyle, density, btnState)
 //	motion.Apply(gtx, primitive.State(), bw)
 //
 // This package ships only the primitives. The one variant that exists

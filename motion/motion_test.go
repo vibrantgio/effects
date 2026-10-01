@@ -41,8 +41,8 @@ var (
 var shaper = tokens.DefaultTypography.DeterministicShaper()
 
 // renderBtn returns a layout.Widget for a button rendered with the
-// given colour tokens and visual state. Sharp-cornered and
-// empty-labelled, so the motion-applied output stays bit-stable across
+// given colour tokens and visual state. Sharp-cornered and carrying no
+// title, so the motion-applied output stays bit-stable across
 // GPU contexts.
 func renderBtn(colors tokens.PlatformColors, s button.RenderState) layout.Widget {
 	sharp := tokens.RadiusScale{}
