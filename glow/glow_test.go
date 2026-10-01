@@ -18,14 +18,14 @@ import (
 const (
 	frameW, frameH                         = 160, 100
 	boundsX0, boundsY0, boundsX1, boundsY1 = 50, 30, 110, 70
-	spreadRadius                             = 16
+	spreadRadius                           = 16
 )
 
 var (
-	bgColor    = color.NRGBA{R: 40, G: 40, B: 48, A: 255}
-	fgColor    = color.NRGBA{R: 0, G: 0, B: 0, A: 255}
+	bgColor      = color.NRGBA{R: 40, G: 40, B: 48, A: 255}
+	fgColor      = color.NRGBA{R: 0, G: 0, B: 0, A: 255}
 	spreadColor  = color.NRGBA{R: 255, G: 255, B: 255, A: 255}
-	frameSize  = image.Pt(frameW, frameH)
+	frameSize    = image.Pt(frameW, frameH)
 	spreadBounds = image.Rect(boundsX0, boundsY0, boundsX1, boundsY1)
 )
 
