@@ -3,7 +3,7 @@
 The effects layer of [Vibrant Gio](https://github.com/vibrantgio), a design
 system for native desktop applications on macOS, Windows and Linux, written in
 pure Go on [Gio](https://gioui.org). effects is where a component stops being
-correct and starts being alive: the shadow under a toast, the halo around a
+correct and starts being alive: the shadow under a toast, the ring around a
 focused thing, the press that gives way under the pointer and springs back, the
 fade that carries a notification out, the frosted glass behind a dialog.
 
