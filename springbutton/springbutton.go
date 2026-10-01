@@ -15,11 +15,11 @@
 // own pointer target; semantic ops — is preserved.
 //
 //	// Static components button.Button:
-//	w, _ := button.Button(theme, button.Props{Label: "Save", OnClick: save}).First()
+//	w, _ := button.Button(theme, button.Props{Title: "Save", OnClick: save}).First()
 //
 //	// Spring-physics variant:
 //	w, _ := springbutton.SpringButton(theme,
-//	    button.Props{Label: "Save", OnClick: save},
+//	    button.Props{Title: "Save", OnClick: save},
 //	    springbutton.Options{}, // zero-valued: package defaults
 //	).First()
 //
@@ -230,7 +230,7 @@ func SpringButton(
 
 				desc := props.Description
 				if desc == "" {
-					desc = props.Label
+					desc = props.Title
 				}
 				// A button whose label is a symbol is a different drawing
 				// from one carrying text, and in a chrome region it is the
@@ -239,12 +239,12 @@ func SpringButton(
 				// one picks with it: a spring button handed
 				// Props.Variant Chrome and a symbol draws the toolbar
 				// control, never the form button under another name.
-				iconOnly := props.Icon != nil && props.Label == ""
+				iconOnly := props.Icon != nil && props.Title == ""
 				chromeSymbol := iconOnly && state.Variant == button.Chrome
 
 				face := func(gtx layout.Context) layout.Dimensions {
 					semantic.ClassOp(semantic.Button).Add(gtx.Ops)
-					semantic.LabelOp(props.Label).Add(gtx.Ops)
+					semantic.LabelOp(props.Title).Add(gtx.Ops)
 					semantic.DescriptionOp(desc).Add(gtx.Ops)
 					semantic.EnabledOp(!dis).Add(gtx.Ops)
 					switch {
@@ -259,7 +259,7 @@ func SpringButton(
 					// and sizes exactly like the static one.
 					return button.Render(
 						shaper,
-						props.Label,
+						props.Title,
 						tok.platform, tok.spacing, tok.radius,
 						tok.label, tok.density,
 						state,

@@ -27,7 +27,7 @@ import (
 func TestSpringButtonObservableEmits(t *testing.T) {
 	w, err := springbutton.SpringButton(
 		rx.Of(theme.Default()),
-		button.Props{Label: "OK"},
+		button.Props{Title: "OK"},
 		springbutton.Options{},
 	).First()
 	if err != nil {
@@ -45,7 +45,7 @@ func TestSpringButtonObservableEmits(t *testing.T) {
 func TestSpringButtonRendersWithoutPanic(t *testing.T) {
 	w, err := springbutton.SpringButton(
 		rx.Of(theme.Default()),
-		button.Props{Label: "Hello"},
+		button.Props{Title: "Hello"},
 		springbutton.Options{},
 	).First()
 	if err != nil {

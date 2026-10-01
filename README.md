@@ -4,7 +4,7 @@ The effects layer of [Vibrant Gio](https://github.com/vibrantgio), a design
 system for native desktop applications on macOS, Windows and Linux, written in
 pure Go on [Gio](https://gioui.org). effects is where a component stops being
 correct and starts being alive: the shadow under a toast, the ring around a
-focused thing, the press that gives way under the pointer and springs back, the
+focused control, the press that gives way under the pointer and springs back, the
 fade that carries a notification out, the frosted glass behind a dialog.
 
 Gio hands you `op/paint` and a frame callback. It has no shadow, no radial
@@ -104,12 +104,12 @@ side by side:
 
 ```go
 g.btnCompare, err = button.Button(th, button.Props{
-	Label:   "Click me",
+	Title:   "Click me",
 	OnClick: func(_ layout.Context) { g.btnCompareClicks++; w.Invalidate() },
 }).First()
 
 g.springBtnLive, err = springbutton.SpringButton(th, button.Props{
-	Label:   "Click me",
+	Title:   "Click me",
 	OnClick: func(_ layout.Context) { g.springBtnClicks++; w.Invalidate() },
 }, springbutton.Options{}).First()
 ```
