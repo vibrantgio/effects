@@ -42,13 +42,10 @@ takes its cast shadow from `depth` and its fade from `tween` — and one
 application uses `depth` directly. The [organization page](https://github.com/vibrantgio)
 has the full tier table.
 
-The layering inversions that used to run through this module are cut. The
-prism↔pulse cycle is gone: components' root module does not require effects, and
-only its demo `gallery` — a nested module, exempt by ADR-001 — imports
-`springbutton`. And `transition`, which once lived in spectrum and dragged
-tier 1 up to tier 3, now lives here. The deprecated `spectrum/transition`
-alias shim that forwarded to it is gone as of spectrum v0.2.0, so this is
-the only path.
+Nothing below this tier requires it: components' root module does not require
+effects, and only its demo `gallery` — a nested module, exempt from the tier
+table — imports `springbutton`. `transition` lives here, and
+`effects/transition` is the only path to it.
 
 ```sh
 go get github.com/vibrantgio/effects
@@ -65,18 +62,18 @@ github.com/reactivego/rx v0.3.0 and Go 1.25.1.
 | `spring` | One scalar pulled toward a target by a damped spring, simulated as a two-particle `traer.ParticleSystem`. `SetTarget` retargets mid-flight without losing velocity; `Settled` says when to stop asking for frames. |
 | `motion` | `Enter`, `Exit` and `Transition`: a tween for opacity and a spring for scale, ticked together. `Apply` is the bridge to Gio — it lays a `layout.Widget` out once and replays it inside a scale-around-centre transform and an opacity layer, so the footprint never jitters. Defaults resolve from the token motion scale: `FramesAt` converts a duration stop at a frame rate, `SpringOptions` converts a `tokens.Spring` preset. |
 | `springbutton` | `components/button` with a press that scales down and springs back, on the same props and the same visual contract — including `Props.Emphasis`, since it renders through the pure `button.Render` and has to copy across every field the two structs share. The one shipped variant. |
-| `transition` | Interpolates a whole `tokens.ColorTokens` set between two values, so a light-to-dark flip can cross-fade rather than snap. Moved here from spectrum in the G-B3 inversion; the `spectrum/transition` alias that forwarded here is deleted as of spectrum v0.2.0. |
+| `transition` | Interpolates a whole `tokens.ColorTokens` set between two values, so a light-to-dark flip can cross-fade rather than snap. |
 | `blur` | The blur Gio does not have: a parallel three-pass box approximation of a Gaussian (`Gaussian`, `Blurrer`), `Cache` for static imagery blurred once and reused, and `Backdrop` — the "blurred behind the dialog" pipeline on `gioui.org/gpu/headless`, with `FallbackOp` and `Available` for the platforms where headless rendering is not. |
-| `depth` | A cast shadow under a rectangle, composed from eight linear gradients, with extent and offset read from a `tokens.ElevationLevel`. Opt-in vibrancy per ADR-005: a shadow marks what floats and can leave — a toast, a popover, a menu — never what is raised in place, which reads as raised by its surface step alone. The E2.2 caller audit is recorded in the package doc. |
-| `glow` | A luminance spread around a rectangle, composed from eight linear gradients standing in for the radial gradient Gio does not expose. The E4.4 verdict — why an animated glow is gradients, not blur — is recorded in the package doc, with the measurements. |
+| `depth` | A cast shadow under a rectangle, composed from eight linear gradients, with extent and offset read from a `tokens.ElevationLevel`. Opt-in vibrancy; a shadow marks what floats and can leave — a toast, a popover, a menu — never what is raised in place, which reads as raised by its surface step alone. The caller audit is recorded in the package doc. |
+| `glow` | A luminance spread around a rectangle, composed from eight linear gradients standing in for the radial gradient Gio does not expose. The verdict — why an animated glow is gradients, not blur — is recorded in the package doc, with the measurements. |
 | `conductor` | A shared frame counter, so a staggered wave stays phase-locked. Independent per-component simulations drift; participants reading `Local(offset)` off one clock do not. |
 
 ## Usage
 
 The two packages the design system leans on hardest are `depth` and `tween`,
 and both are one line inside a render function. A column of toasts uses both:
-the cast shadow goes down first — a toast floats and can leave, exactly what
-ADR-005 reserves shadows for — and the surface is painted over it:
+the cast shadow goes down first — a toast floats and can leave, which is what
+a shadow is for — and the surface is painted over it:
 
 ```go
 depth.Shadow(gtx, image.Rectangle{Max: image.Pt(w, h)}, tokens.Level3, radius, alpha)
@@ -204,9 +201,8 @@ estimated.
 - **Three of the nine packages have no consumer anywhere in the
   organization.** `conductor`, `glow` and `motion` are imported by nothing
   outside their own tests — tested, golden-tested, working, and never wired
-  to a component. `transition` now has no importer at all: its one consumer
-  was the `spectrum/transition` shim, deleted in spectrum v0.2.0, and
-  nothing actually drives a theme cross-fade (see theme's status).
+  to a component. `transition` has no importer at all: nothing drives a
+  theme cross-fade (see theme's status).
   `depth`, `tween`, `blur` and `springbutton` are the
   ones really in use, and `spring` is used through `motion` and
   `springbutton`.
