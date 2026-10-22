@@ -52,6 +52,7 @@ func LerpPlatformColors(from, to tokens.PlatformColors, t float64) tokens.Platfo
 		FindHighlight:                         tween.LerpNRGBA(from.FindHighlight, to.FindHighlight, t),
 		Separator:                             tween.LerpNRGBA(from.Separator, to.Separator, t),
 		Grid:                                  tween.LerpNRGBA(from.Grid, to.Grid, t),
+		Seam:                                  tween.LerpNRGBA(from.Seam, to.Seam, t),
 		Label:                                 tween.LerpNRGBA(from.Label, to.Label, t),
 		SecondaryLabel:                        tween.LerpNRGBA(from.SecondaryLabel, to.SecondaryLabel, t),
 		TertiaryLabel:                         tween.LerpNRGBA(from.TertiaryLabel, to.TertiaryLabel, t),
