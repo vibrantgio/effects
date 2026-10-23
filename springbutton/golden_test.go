@@ -65,7 +65,7 @@ func staticTheme(c tokens.PlatformColors) theme.Theme {
 // this package adds is what the control looks like while it is moving, the
 // shadow it casts on its band included, and only a picture carries that.
 func TestChromeSpringButtonGolden(t *testing.T) {
-	mark := icons.Mark(icons.Sidebar)
+	mark := icons.Mark(icons.SidebarLeft)
 	if mark == nil {
 		t.Fatal("no painter for the sidebar")
 	}

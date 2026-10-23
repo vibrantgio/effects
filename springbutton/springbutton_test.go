@@ -137,7 +137,7 @@ func TestTheChromeSpringButtonRecordsItsState(t *testing.T) {
 	}
 
 	size := image.Pt(80, 60)
-	mark := icons.Mark(icons.Sidebar)
+	mark := icons.Mark(icons.SidebarLeft)
 	if mark == nil {
 		t.Fatal("no painter for the sidebar")
 	}
