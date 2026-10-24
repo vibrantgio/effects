@@ -3,8 +3,7 @@
 The effects layer of [Vibrant Gio](https://github.com/vibrantgio), a design
 system for native desktop applications on macOS, Windows and Linux, written in
 pure Go on [Gio](https://gioui.org). effects is where a component stops being
-correct and starts being alive: the shadow under a toast, the ring around a
-focused control, the press that gives way under the pointer and springs back, the
+correct and starts being alive: the shadow under a toast, the press that gives way under the pointer and springs back, the
 fade that carries a notification out, the frosted glass behind a dialog.
 
 Gio hands you `op/paint` and a frame callback. It has no shadow, no radial
@@ -17,13 +16,13 @@ motion that just has to land where you said. `spring` is a real damped-spring
 simulation over one [traer](https://github.com/vibrantgio/traer) particle, for
 motion that has to feel like it has mass. `motion` composes both,
 `springbutton` is components' button wired to a spring, and `transition` teaches
-`tween` the colour-token contract. Alongside the animation core sit the static
+`tween` the platform's colour set and its drop shadows. Alongside the animation core sit the static
 effects — `depth` and `glow`, gradient compositions — and `blur`, the module's
 own Gaussian blur pipeline for the primitive Gio does not have.
 
 **effects never decorates components globally.** There is no theme flag and no wrapper
 that quietly animates every button in an application. An animated component is
-an explicit variant, exported alongside its components counterpart and named at the
+a component of its own, exported beside the components one it animates and named at the
 call site — `springbutton.SpringButton` where you would have written
 `button.Button` — so reading the call tells you the thing moves, the
 unanimated component keeps costing nothing, and the dependency runs effects →
@@ -32,51 +31,40 @@ your own: wrap any components render function in it.
 
 ## Where it sits
 
-Tier 3 of the stack — `mvu → theme → components → effects → patterns → markdown`.
-effects imports [mvu](https://github.com/vibrantgio/mvu), `theme` and `tokens`
-from [theme](https://github.com/vibrantgio/theme), `button` from
+The tier above components in the stack. effects imports
+[mvu](https://github.com/vibrantgio/mvu), `theme`, `tokens` and `color` from
+[theme](https://github.com/vibrantgio/theme), `button` from
 [components](https://github.com/vibrantgio/components), and the
-[traer](https://github.com/vibrantgio/traer) particle system.
-[patterns](https://github.com/vibrantgio/patterns) is built on it — its toast
-takes its cast shadow from `depth` and its fade from `tween` — and one
-application uses `depth` directly. The [organization page](https://github.com/vibrantgio)
-has the full tier table.
-
-Nothing below this tier requires it: components' root module does not require
-effects, and only its demo `gallery` — a nested module, exempt from the tier
-table — imports `springbutton`. `transition` lives here, and
-`effects/transition` is the only path to it.
+[traer](https://github.com/vibrantgio/traer) particle system. The
+[organization page](https://github.com/vibrantgio) has the full tier table.
 
 ```sh
 go get github.com/vibrantgio/effects
 ```
-
-Every module in the organization is on gioui.org v0.10.2,
-github.com/reactivego/rx v0.3.0 and Go 1.25.1.
 
 ## Packages
 
 | Package | |
 | --- | --- |
 | `tween` | `Tween[T]{From, To, Frames, Lerp}` and `At(n)`. A value type with no clock, no easing and no state — the caller decides what a frame is. `LerpFloat64` and `LerpNRGBA` cover opacity, position and colour. |
-| `spring` | One scalar pulled toward a target by a damped spring, simulated as a two-particle `traer.ParticleSystem`. `SetTarget` retargets mid-flight without losing velocity; `Settled` says when to stop asking for frames. |
-| `motion` | `Enter`, `Exit` and `Transition`: a tween for opacity and a spring for scale, ticked together. `Apply` is the bridge to Gio — it lays a `layout.Widget` out once and replays it inside a scale-around-centre transform and an opacity layer, so the footprint never jitters. Defaults resolve from the token motion scale: `FramesAt` converts a duration stop at a frame rate, `SpringOptions` converts a `tokens.Spring` preset. |
-| `springbutton` | `components/button` with a press that scales down and springs back, on the same props and the same visual contract — including `Props.Emphasis`, since it renders through the pure `button.Render` and has to copy across every field the two structs share. The one shipped variant. |
-| `transition` | Interpolates a whole `tokens.ColorTokens` set between two values, so a light-to-dark flip can cross-fade rather than snap. |
-| `blur` | The blur Gio does not have: a parallel three-pass box approximation of a Gaussian (`Gaussian`, `Blurrer`), `Cache` for static imagery blurred once and reused, and `Backdrop` — the "blurred behind the dialog" pipeline on `gioui.org/gpu/headless`, with `FallbackOp` and `Available` for the platforms where headless rendering is not. |
-| `depth` | A cast shadow under a rectangle, composed from eight linear gradients, with extent and offset read from a `tokens.ElevationLevel`. Opt-in vibrancy; a shadow marks what floats and can leave — a toast, a popover, a menu — never what is raised in place, which reads as raised by its surface step alone. The caller audit is recorded in the package doc. |
+| `spring` | One scalar pulled toward a target by a damped spring, simulated as a two-particle `traer.ParticleSystem`. `SetTarget` retargets mid-flight without losing velocity; `Value`, `Velocity` and `Target` read it; `Settled` says when to stop asking for frames. |
+| `motion` | `Enter`, `Exit` and `Transition`: a tween for opacity and a spring for scale, ticked together, between the `State`s `Hidden` and `Visible`. `Apply` is the bridge to Gio — it lays a `layout.Widget` out once and replays it inside a scale-around-centre transform and an opacity layer, so the footprint never jitters. Defaults resolve from the token motion scale: `FramesAt` converts a duration stop at a frame rate, `SpringOptions` converts a `tokens.Spring` preset. |
+| `springbutton` | `components/button` with a press that scales down and springs back, on the same props and the same visual contract — including `Props.Emphasis`, since it renders through the pure `button.Render` and has to copy across every field the two structs share. |
+| `transition` | Interpolates the platform's colour set, so a light-to-dark flip can cross-fade rather than snap: `LerpPlatformColors` lerps every field of two `tokens.PlatformColors` at a parameter in [0,1], `PlatformColorsTween` packages that as a `tween.Tween`, and `LerpDropShadow` lerps a `tokens.DropShadow`'s coverage, reach and offset together. It only produces values; driving it is the caller's. |
+| `blur` | The blur Gio does not have: a parallel three-pass box approximation of a Gaussian (`Gaussian`, `Box`, `Blurrer`), `Cache` for static imagery blurred once and reused (`DefaultDivisor`, `WithDivisor` for the reduced size it renders at), and `Backdrop` — the "blurred behind the dialog" pipeline on `gioui.org/gpu/headless`, with `FallbackOp` and `Available` for the platforms where headless rendering is not. |
+| `depth` | The shadow a floating surface casts: `Shadow(gtx, bounds, radius, sh)` paints the `tokens.DropShadow` it is handed — the platform's `FloatingShadow` or `PaneShadow` — as an interior filled at the shadow's peak coverage, rounded at the caller's radius, and eight linear gradients falling from the peak to nothing over the shadow's reach. A surface that fades passes the shadow with a scaled coverage, `sh.WithPeak(…)`. Opt-in; a shadow marks what floats and can leave — a toast, a popover, a menu — never what is raised in place, which is told by its step of fill alone. |
 | `glow` | A luminance spread around a rectangle, composed from eight linear gradients standing in for the radial gradient Gio does not expose. The verdict — why an animated glow is gradients, not blur — is recorded in the package doc, with the measurements. |
-| `conductor` | A shared frame counter, so a staggered wave stays phase-locked. Independent per-component simulations drift; participants reading `Local(offset)` off one clock do not. |
+| `conductor` | A shared frame counter, so a staggered wave stays phase-locked. Independent per-component simulations drift; participants reading `Local(offset)` off one clock do not. `New` makes one, `Tick` advances it, `Frame` reads it. |
 
 ## Usage
 
-The two packages the design system leans on hardest are `depth` and `tween`,
-and both are one line inside a render function. A column of toasts uses both:
-the cast shadow goes down first — a toast floats and can leave, which is what
-a shadow is for — and the surface is painted over it:
+`depth` and `tween` are each one line inside a render function. A placed
+toast uses both: the shadow goes down first — a toast floats and can leave,
+which is what a shadow is for — and the surface is painted over it, at the
+same radius:
 
 ```go
-depth.Shadow(gtx, image.Rectangle{Max: image.Pt(w, h)}, tokens.Level3, radius, alpha)
+depth.Shadow(gtx, image.Rectangle{Max: image.Pt(w, h)}, radius, colors.FloatingShadow)
 ```
 
 The same toast fades out over the last stretch of its lifetime — the theme's
@@ -95,9 +83,8 @@ frame := int((age - (lifetime - fade)) / time.Millisecond)
 return tw.At(frame)
 ```
 
-A variant is chosen by name and takes the same props as the component it
-varies. From `components/gallery`, which renders the static and the spring button
-side by side:
+An animated component is chosen by name and takes the same props as the
+component it animates. The static and the spring button, side by side:
 
 ```go
 g.btnCompare, err = button.Button(th, button.Props{
@@ -175,8 +162,8 @@ contracts to honour:
    scrim instead — `blur.FallbackOp(tint)` is ready-made, and
    `blur.Available()` answers up front. Never assume the blur.
 
-**What not to blur: animated glows.** This was prototyped, measured and
-rejected (E4.4; the evidence is in `glow`'s package doc): an animating
+**What not to blur: animated glows.** The measurements are in `glow`'s
+package doc: an animating
 blur-glow costs 0.2–0.8 ms of events-thread CPU plus an allocation and a
 texture upload per glow per frame, against ~0.5 µs for `glow`'s
 eight-gradient spread, and no cache holds while the radius or intensity
@@ -188,32 +175,22 @@ answer.
 Read the org guide before you write code against this module: the plan
 root's [`AGENTS.md`](https://github.com/vibrantgio/organisation/blob/master/AGENTS.md).
 
-[`AGENTS.md`](./AGENTS.md) in this repository has the build, test and
-golden-image commands. The golden line there is exact and both halves of it
-matter — `-golden.update` must follow the package list, and the list cannot be
-replaced by `./...`.
+The build, test and golden-image commands are reached from the same
+[`organisation/AGENTS.md`](https://github.com/vibrantgio/organisation/blob/master/AGENTS.md).
+`-golden.update` follows the package list (`go test ./depth -golden.update`);
+placed before it, `go test` tests the current directory only.
 
 ## Status
 
 Honest about what does not work yet. Every number below is measured, not
 estimated.
 
-- **Three of the nine packages have no consumer anywhere in the
-  organization.** `conductor`, `glow` and `motion` are imported by nothing
-  outside their own tests — tested, golden-tested, working, and never wired
-  to a component. `transition` has no importer at all: nothing drives a
-  theme cross-fade (see theme's status).
-  `depth`, `tween`, `blur` and `springbutton` are the
-  ones really in use, and `spring` is used through `motion` and
-  `springbutton`.
-- **`springbutton` is the only variant that exists.** The design calls for a
-  spring variant of each interactive components component; one was built.
-  Everything needed for the rest is here — `motion.Apply` takes any components
-  render function — but the wrapper packages are not written, and no phase of
-  the current plan claims them.
+- **`springbutton` is the only animated component.** `motion.Apply` takes
+  any components render function, but no other animated component is
+  written.
 - **`motion`'s defaults do not finish together.** `DefaultFrames` and
-  `DefaultSpring` now resolve from the token motion scale, and they still do
-  not land in step: a `NewEnter(Options{})` ticked at invDt=60 has its
+  `DefaultSpring` resolve from the token motion scale, and they do not land
+  in step: a `NewEnter(Options{})` ticked at invDt=60 has its
   opacity complete at frame 30 and its scale still at 0.991, and does not
   report `Settled(0.005)` until frame 52. A loop that runs to `Settled`
   overshoots the visible animation by 22 frames.
@@ -226,36 +203,26 @@ estimated.
   `SpringSnappy`, `SpringGentle`), which sets all three together.
 - **`spring.Options{}` is not a usable default.** Its zero-value fallbacks
   (k=0.4, c=0.7, m=1) take 873 frames — roughly fifteen seconds of continuous
-  redraw at 60 Hz — to settle to 0.005. Neither in-module consumer goes near
-  them.
-- **`depth` paints a hard rectangle in a fixed black.** The interior fill has
-  square corners, so a foreground with rounded corners shows dark wedges at
-  all four. Opacity is a parameter, so a shadow that has to fade with its
-  surface is given the alpha that surface is painting at, as a fading toast
-  is. And the black is not a token role, so the same shadow that separates a
-  toast on a light background barely registers a difference on a dark one. What changed around it is the role: every level is
-  filled with the platform's own value, and this package is the
-  explicit opt-in for
-  the surfaces that float, not the default way to raise anything.
+  redraw at 60 Hz — to settle to 0.005. `motion` and `springbutton` set
+  their own.
 - **`glow` reserves no space and measures in pixels.** `Spread` draws outside
   the bounds it is given and returns nothing, so in a flex it spills over its
   neighbours unless the caller insets or clips; and `Options.Radius` is raw
   pixels rather than dp, which is backwards from every other size in the
-  system. The blur-based alternative was measured and rejected (E4.4, in the
-  package doc); the pixel unit and the missing inset remain.
-- **Frame counting is still frame counting.** `springbutton` ticks its spring
+  system. The blur-based alternative was measured and rejected, as the
+  package doc records.
+- **Animations count frames, not time.** `springbutton` ticks its spring
   at a hard-coded inverse step of 60 whatever the display is doing, so a
   press that takes 415 ms on a 60 Hz screen takes half that on a 120 Hz one;
   `tween` and `conductor` count frames by construction. The token motion
-  scale now carries duration stops and spring presets, and `motion.FramesAt`
+  scale carries duration stops and spring presets, and `motion.FramesAt`
   converts a stop at a stated frame rate — but nothing here reads the actual
   refresh rate.
-- **Reduced motion is honoured by the theme, not yet by the springs.** The
+- **Reduced motion is honoured by the theme, not by the springs.** The
   theme's `Motion` observable emits `MotionScale.Reduced()` — every duration
-  zero — while the OS preference is on, and duration-driven consumers
-  (patterns' toast fade and tooltip delay resolve from the theme) snap for
-  free. But `springbutton` does not subscribe `Motion`, so its press spring
-  still runs at full amplitude under reduced motion; a spring consumer must
+  zero — while the OS preference is on, and anything timed off a duration
+  stop, `components/tooltip`'s delay among them, snaps for free. But `springbutton` does not subscribe `Motion`, so its press spring
+  runs at full amplitude under reduced motion; code driving a spring must
   read the zero durations as the snap signal itself.
 
 ## License
