@@ -74,13 +74,9 @@ func TestSpringButtonRendersWithoutPanic(t *testing.T) {
 // Visible fraction: at least 30 % of the 1.0 → 0.92 span must be
 // covered in 200 ms. This is a calibration threshold, not a precision
 // claim — the spring's exact trajectory is governed by the physics
-// constants in [springbutton]'s defaults.
+// constants of the theme's default Motion.SpringSnappy preset.
 func TestDefaultsProduceVisibleMotionWithin200ms(t *testing.T) {
-	sp := spring.New(1.0, springbutton.DefaultPressScale, spring.Options{
-		Stiffness: springbutton.DefaultStiffness,
-		Damping:   springbutton.DefaultDamping,
-		Mass:      springbutton.DefaultMass,
-	})
+	sp := spring.New(1.0, springbutton.DefaultPressScale, snappy())
 	for range 12 {
 		sp.Tick(60) // 12 ticks @ 60 Hz = 200 ms
 	}
@@ -94,17 +90,24 @@ func TestDefaultsProduceVisibleMotionWithin200ms(t *testing.T) {
 	}
 }
 
+// snappy returns the physics of the theme's default
+// Motion.SpringSnappy preset, which the button uses.
+func snappy() spring.Options {
+	p := tokens.Motion.SpringSnappy
+	return spring.Options{
+		Stiffness: float64(p.Stiffness),
+		Damping:   float64(p.Damping),
+		Mass:      float64(p.Mass),
+	}
+}
+
 // TestSpringSettlesOnReleaseWithin500ms asserts the spring fully
 // recovers to 1.0 (no leftover scale offset) within 500 ms after the
 // target snaps from PressScale back to 1.0. Guards against an
 // over-damped tuning that would leave the button visibly shrunken
 // after the user lifts off.
 func TestSpringSettlesOnReleaseWithin500ms(t *testing.T) {
-	sp := spring.New(springbutton.DefaultPressScale, 1.0, spring.Options{
-		Stiffness: springbutton.DefaultStiffness,
-		Damping:   springbutton.DefaultDamping,
-		Mass:      springbutton.DefaultMass,
-	})
+	sp := spring.New(springbutton.DefaultPressScale, 1.0, snappy())
 	for range 30 {
 		sp.Tick(60) // 30 ticks @ 60 Hz = 500 ms
 	}

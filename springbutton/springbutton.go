@@ -27,26 +27,34 @@
 //
 // On press, the spring retargets to [Options.PressScale]; on release,
 // back to 1.0. The free particle's position is read every frame as a
-// scale factor applied around the button's centre. The default
-// parameters (Stiffness 300, Damping 22, Mass 1) are underdamped, so
-// the release overshoots slightly and comes back — the "pop". Measured
-// against this package's own settle tolerance, a press-and-release
-// settles 25 frames after the release.
+// scale factor applied around the button's centre. The spring is the
+// theme's Motion.SpringSnappy preset. The theme's default preset
+// (Stiffness 300, Damping 22, Mass 1) is underdamped, so the release
+// overshoots slightly and comes back — the "pop". Measured against this
+// package's own settle tolerance, the release settles about 415 ms
+// after the pointer lifts.
 //
 // While the spring is in flight the component schedules its own redraws
 // via [op.InvalidateCmd]; once it settles, no further frames are
 // requested, so a SpringButton at rest costs the same per frame as a
 // static components button.
 //
-// # Frames, not seconds
+// # Time
 //
-// The spring is ticked at a hard-coded inverse step of 60 rather than
-// at the window's real frame rate, so those 25 frames are 25 frames
-// whatever the display does. On a 120 Hz screen the press animation
-// takes half the wall-clock time it takes on a 60 Hz one, and under a
-// stuttering host it stretches out to match. Nothing here reads the
-// frame rate, and there is no option to supply it; a frame-rate-aware
-// step would be a later refinement.
+// Each frame steps the spring by the time since the previous frame,
+// read from gtx.Now. The press takes the same wall-clock time on a
+// 60 Hz and a 120 Hz display. The step is split into sub-steps of at
+// most 1/60 s, which keeps the explicit integrator stable. One frame
+// steps at most 1/30 s, so a stalled host slows the press and never
+// makes it jump, and the first frame after a pause steps 1/30 s. A frame with no earlier frame, or with a clock that
+// runs backwards, steps zero time.
+//
+// # Reduced motion
+//
+// While the OS preference is on, the theme's Motion emits every
+// duration stop as zero. The button reads those zeros and moves the
+// spring to its target in the frame that sets the target: press and
+// release land in one frame, with no animation.
 //
 // # Fonts
 //
@@ -69,12 +77,17 @@
 // The clickable and the spring are allocated inside the rx.Defer
 // closure, so they persist across theme and
 // disabled emissions and across frames for the lifetime of one
-// subscription. A new subscription resets the physics — a button that
-// is subscribed twice has two independent springs, and one that is
-// resubscribed mid-press restarts at scale 1.
+// subscription. A theme emission with a different spring preset
+// replaces the spring at its current position, with zero velocity. A
+// new subscription resets the physics — a button that is subscribed
+// twice has two independent springs, and one that is resubscribed
+// mid-press restarts at scale 1.
 package springbutton
 
 import (
+	"math"
+	"time"
+
 	"gioui.org/f32"
 	"gioui.org/io/semantic"
 	"gioui.org/layout"
@@ -90,37 +103,29 @@ import (
 	"github.com/vibrantgio/theme/tokens"
 )
 
-// Defaults tuned for a visible-but-snappy button press. The amplitude
-// of the scale change is small (8 %), so the spring must be stiff
-// enough to traverse most of it within a ~150 ms press window at a
-// 60 Hz frame rate. Stiffness 300 with Damping 22 (zeta ≈ 0.635) gives
-// a small overshoot for "pop" feel. Measured against settleTolerance,
-// each leg settles 25 frames after the pointer event — ~415 ms at
-// 60 Hz.
+// DefaultPressScale is the scale a pressed button shrinks to. The
+// change is small (8 %), so the theme's snappy spring covers most of it
+// within a ~150 ms press.
 const (
-	DefaultStiffness  = 300.0
-	DefaultDamping    = 22.0
-	DefaultMass       = 1.0
 	DefaultPressScale = 0.92
 	settleTolerance   = 0.001
 )
 
-// The spring is ticked at this fixed inverse step. A constant matches
-// the convention max(1, fps/30) at 60 Hz; under frame-rate drift the
-// animation drifts too.
-const invDt = 60.0
+// maxSubStep is the longest single integration step. At 1/60 s a 60 Hz
+// frame is one step. Velocity Verlet on the snappy preset
+// (ω ≈ 17.3 rad/s) is stable below a step of about 115 ms, so 1/60 s
+// is far inside that. maxFrameStep is the most time one frame steps.
+// It limits how far the press moves in one frame and how many
+// sub-steps one frame runs.
+const (
+	maxSubStep   = time.Second / 60
+	maxFrameStep = time.Second / 30
+)
 
-// Options configures the spring physics layered on top of
-// components/button. Zero-valued fields use package defaults so an empty
+// Options configures the press layered on top of components/button.
+// The spring itself is the theme's Motion.SpringSnappy preset. An empty
 // Options{} produces the canonical SpringButton feel.
 type Options struct {
-	// Stiffness, Damping, Mass are the same spring parameters
-	// documented in [effects/spring.Options]. Zero values are replaced
-	// with [DefaultStiffness], [DefaultDamping], [DefaultMass].
-	Stiffness float64
-	Damping   float64
-	Mass      float64
-
 	// PressScale is the scale the button shrinks to while pressed.
 	// 1.0 means no shrink (the spring becomes a no-op visual);
 	// values below 1.0 produce a press-down effect. Zero is replaced
@@ -138,15 +143,6 @@ func SpringButton(
 	props button.Props,
 	opts Options,
 ) rx.Observable[layout.Widget] {
-	if opts.Stiffness == 0 {
-		opts.Stiffness = DefaultStiffness
-	}
-	if opts.Damping == 0 {
-		opts.Damping = DefaultDamping
-	}
-	if opts.Mass == 0 {
-		opts.Mass = DefaultMass
-	}
 	if opts.PressScale == 0 {
 		opts.PressScale = DefaultPressScale
 	}
@@ -158,11 +154,16 @@ func SpringButton(
 
 	// Flatten the nested theme observables into a concrete snapshot. The
 	// typography emission supplies both the LabelLarge text style and the
-	// theme's cached shaper; the theme owns the typeface.
+	// theme's cached shaper; the theme owns the typeface. The motion
+	// emission supplies the spring preset and the reduced-motion signal.
 	resolved := rx.SwitchMap(th, func(t theme.Theme) rx.Observable[resolvedTokens] {
 		return rx.Map(
-			rx.CombineLatest5(t.Platform, t.Typography, t.Spacing, t.Radius, t.Density),
-			func(n rx.Tuple5[tokens.PlatformColors, tokens.Typography, tokens.SpacingScale, tokens.RadiusScale, tokens.Density]) resolvedTokens {
+			rx.CombineLatest2(
+				rx.CombineLatest5(t.Platform, t.Typography, t.Spacing, t.Radius, t.Density),
+				t.Motion,
+			),
+			func(m rx.Tuple2[rx.Tuple5[tokens.PlatformColors, tokens.Typography, tokens.SpacingScale, tokens.RadiusScale, tokens.Density], tokens.MotionScale]) resolvedTokens {
+				n, motion := m.First, m.Second
 				typ := n.Second
 				return resolvedTokens{
 					platform: n.First,
@@ -171,6 +172,8 @@ func SpringButton(
 					radius:   n.Fourth,
 					density:  n.Fifth,
 					shaper:   typ.Shaper(),
+					spring:   motion.SpringSnappy,
+					reduced:  reducedMotion(motion),
 				}
 			},
 		)
@@ -180,11 +183,9 @@ func SpringButton(
 
 	return rx.Defer(func() rx.Observable[layout.Widget] {
 		var click widget.Clickable
-		sp := spring.New(1.0, 1.0, spring.Options{
-			Stiffness: opts.Stiffness,
-			Damping:   opts.Damping,
-			Mass:      opts.Mass,
-		})
+		var sp *spring.Spring
+		var preset tokens.Spring
+		var last time.Time
 		return rx.Map(inputs, func(next rx.Tuple2[resolvedTokens, bool]) layout.Widget {
 			tok, dis := next.First, next.Second
 
@@ -217,8 +218,27 @@ func SpringButton(
 				if pressed {
 					target = opts.PressScale
 				}
-				sp.SetTarget(target)
-				sp.Tick(invDt)
+				// Only the frame touches the spring: the emissions arrive
+				// on another goroutine.
+				if sp == nil || tok.spring != preset {
+					at := 1.0
+					if sp != nil {
+						at = sp.Value()
+					}
+					preset = tok.spring
+					sp = newSpring(at, preset)
+				}
+				if tok.reduced {
+					// Reduced motion: the spring lands on its target in
+					// the frame that sets the target.
+					if sp.Value() != target || sp.Velocity() != 0 {
+						sp = newSpring(target, preset)
+					}
+				} else {
+					sp.SetTarget(target)
+					advance(sp, frameStep(last, gtx.Now))
+				}
+				last = gtx.Now
 				scale := float32(sp.Value())
 
 				state := renderState(props, button.RenderState{
@@ -320,6 +340,46 @@ func renderState(props button.Props, interaction button.RenderState) button.Rend
 	return s
 }
 
+// newSpring returns a spring at rest at position at, with the physics
+// of the theme preset p.
+func newSpring(at float64, p tokens.Spring) *spring.Spring {
+	return spring.New(at, at, spring.Options{
+		Stiffness: float64(p.Stiffness),
+		Damping:   float64(p.Damping),
+		Mass:      float64(p.Mass),
+	})
+}
+
+// frameStep returns the time one frame steps the spring: the time from
+// the previous frame at last to this frame at now. The step is zero
+// when no previous frame exists or when the clock runs backwards. It is
+// at most [maxFrameStep].
+func frameStep(last, now time.Time) time.Duration {
+	if last.IsZero() || now.IsZero() {
+		return 0
+	}
+	return min(max(now.Sub(last), 0), maxFrameStep)
+}
+
+// advance steps sp by d, in equal sub-steps of at most [maxSubStep].
+func advance(sp *spring.Spring, d time.Duration) {
+	if d <= 0 {
+		return
+	}
+	n := int(math.Ceil(float64(d) / float64(maxSubStep)))
+	invDt := float64(n) / d.Seconds()
+	for range n {
+		sp.Tick(invDt)
+	}
+}
+
+// reducedMotion reports whether m is the reduced-motion scale: every
+// duration stop is zero.
+func reducedMotion(m tokens.MotionScale) bool {
+	return m.DurXFast == 0 && m.DurFast == 0 && m.DurNormal == 0 &&
+		m.DurSlow == 0 && m.DurXSlow == 0
+}
+
 // resolvedTokens mirrors the per-emission token snapshot that
 // components/button keeps unexported. Spring composition operates in the
 // same token space as the static button so the visual contract matches
@@ -331,4 +391,6 @@ type resolvedTokens struct {
 	radius   tokens.RadiusScale
 	density  tokens.Density // control height and inner padding
 	shaper   *text.Shaper   // the theme's cached shaper
+	spring   tokens.Spring  // the theme's Motion.SpringSnappy preset
+	reduced  bool           // every Motion duration stop is zero
 }

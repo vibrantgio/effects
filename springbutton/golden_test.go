@@ -3,6 +3,7 @@ package springbutton_test
 import (
 	"image"
 	"testing"
+	"time"
 
 	"gioui.org/f32"
 	gioinput "gioui.org/io/input"
@@ -35,11 +36,17 @@ var (
 )
 
 // springFrames is how many frames the press is held for before the control is
-// recorded. The spring is ticked once per frame at a fixed inverse step of 60,
-// so the scale a stored frame carries is the same on every machine; six frames
-// in, the press is part way down its travel rather than at either end, which
-// is the state a resting render cannot show.
+// recorded. The test fixes the frame time at [frame60], so the scale a stored
+// frame carries is the same on every machine; six frames in, the press is part
+// way down its travel rather than at either end, which is the state a resting
+// render cannot show.
 const springFrames = 6
+
+// frame60 is the time from one frame to the next on a 60 Hz display.
+const frame60 = time.Second / 60
+
+// clock0 is the time of the first headless frame.
+var clock0 = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 
 // staticTheme freezes one colour scheme into a Theme whose every field emits
 // once — the shape theme/window feeds a component, minus the live OS poll.
@@ -90,7 +97,7 @@ func TestChromeSpringButtonGolden(t *testing.T) {
 				}
 				scene := onChrome(sc.colors, w)
 				if st.frames > 0 {
-					scene = held(scene, chromeFrame, chromePress, st.frames)
+					scene = held(scene, chromeFrame, chromePress, st.frames, frame60)
 				}
 				golden.Render(t, name, chromeFrame, scene)
 			})
@@ -109,22 +116,26 @@ func onChrome(p tokens.PlatformColors, w layout.Widget) layout.Widget {
 	}
 }
 
-// held drives w through frames headless frames with the pointer down at pos
-// and returns a layout.Widget drawing from the state those frames left behind.
+// held drives w through frames headless frames with the pointer down at pos,
+// one frame every step, and returns a layout.Widget that draws the next frame.
 // It is how a spring is caught in flight: the physics live inside the
 // component, so the only way to a frame part way down a press is to press and
-// keep laying out.
-func held(w layout.Widget, size image.Point, pos f32.Point, frames int) layout.Widget {
+// keep laying out. With frames zero, the returned layout.Widget draws the
+// first frame that sees the press.
+func held(w layout.Widget, size image.Point, pos f32.Point, frames int, step time.Duration) layout.Widget {
 	r := new(gioinput.Router)
+	now := clock0
 	drive := func() {
 		var ops op.Ops
 		w(layout.Context{
 			Metric:      unit.Metric{PxPerDp: 1, PxPerSp: 1},
 			Constraints: layout.Exact(size),
+			Now:         now,
 			Ops:         &ops,
 			Source:      r.Source(),
 		})
 		r.Frame(&ops)
+		now = now.Add(step)
 	}
 	drive()
 	r.Queue(pointer.Event{Kind: pointer.Press, Position: pos, Buttons: pointer.ButtonPrimary, Source: pointer.Mouse})
@@ -133,6 +144,7 @@ func held(w layout.Widget, size image.Point, pos f32.Point, frames int) layout.W
 	}
 	return func(gtx layout.Context) layout.Dimensions {
 		gtx.Source = r.Source()
+		gtx.Now = now
 		return w(gtx)
 	}
 }

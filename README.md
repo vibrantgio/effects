@@ -49,7 +49,7 @@ go get github.com/vibrantgio/effects
 | `tween` | `Tween[T]{From, To, Frames, Lerp}` and `At(n)`. A value type with no clock, no easing and no state — the caller decides what a frame is. `LerpFloat64` and `LerpNRGBA` cover opacity, position and colour. |
 | `spring` | One scalar pulled toward a target by a damped spring, simulated as a two-particle `traer.ParticleSystem`. `SetTarget` retargets mid-flight without losing velocity; `Value`, `Velocity` and `Target` read it; `Settled` says when to stop asking for frames. |
 | `motion` | `Enter`, `Exit` and `Transition`: a tween for opacity and a spring for scale, ticked together, between the `State`s `Hidden` and `Visible`. `Apply` is the bridge to Gio — it lays a `layout.Widget` out once and replays it inside a scale-around-centre transform and an opacity layer, so the footprint never jitters. Defaults resolve from the token motion scale: `FramesAt` converts a duration stop at a frame rate, `SpringOptions` converts a `tokens.Spring` preset. |
-| `springbutton` | `components/button` with a press that scales down and springs back, on the same props and the same visual contract — including `Props.Emphasis`, since it renders through the pure `button.Render` and has to copy across every field the two structs share. |
+| `springbutton` | `components/button` with a press that scales down and springs back, on the same props and the same visual contract — including `Props.Emphasis`, since it renders through the pure `button.Render` and has to copy across every field the two structs share. The spring is the theme's `Motion.SpringSnappy` preset, each frame steps it by the frame's elapsed time, and under reduced motion the press lands in one frame. |
 | `transition` | Interpolates the platform's colour set, so a light-to-dark flip can cross-fade rather than snap: `LerpPlatformColors` lerps every field of two `tokens.PlatformColors` at a parameter in [0,1], `PlatformColorsTween` packages that as a `tween.Tween`, and `LerpDropShadow` lerps a `tokens.DropShadow`'s coverage, reach and offset together. It only produces values; driving it is the caller's. |
 | `blur` | The blur Gio does not have: a parallel three-pass box approximation of a Gaussian (`Gaussian`, `Box`, `Blurrer`), `Cache` for static imagery blurred once and reused (`DefaultDivisor`, `WithDivisor` for the reduced size it renders at), and `Backdrop` — the "blurred behind the dialog" pipeline on `gioui.org/gpu/headless`, with `FallbackOp` and `Available` for the platforms where headless rendering is not. |
 | `depth` | The shadow a floating surface casts: `Shadow(gtx, bounds, radius, sh)` paints the `tokens.DropShadow` it is handed — the platform's `FloatingShadow` or `PaneShadow` — as an interior filled at the shadow's peak coverage, rounded at the caller's radius, and eight linear gradients falling from the peak to nothing over the shadow's reach. A surface that fades passes the shadow with a scaled coverage, `sh.WithPeak(…)`. Opt-in; a shadow marks what floats and can leave — a toast, a popover, a menu — never what is raised in place, which is told by its step of fill alone. |
@@ -98,9 +98,10 @@ g.springBtnLive, err = springbutton.SpringButton(th, button.Props{
 }, springbutton.Options{}).First()
 ```
 
-`springbutton.Options{}` is a zero value you can rely on — its fallbacks were
-tuned for this component. `spring.Options{}` is not, and `motion.Options{}` is
-tuned but does not add up; both are in the status section below.
+`springbutton.Options{}` is a zero value you can rely on — the spring comes
+from the theme's `Motion`, and the press scale falls back to a tuned default.
+`spring.Options{}` is not, and `motion.Options{}` is tuned but does not add
+up; both are in the status section below.
 
 Driving a `spring` or a `motion` primitive yourself is the other half. The
 object is stateful, so it has to be allocated once per subscription — inside
@@ -203,27 +204,26 @@ estimated.
   `SpringSnappy`, `SpringGentle`), which sets all three together.
 - **`spring.Options{}` is not a usable default.** Its zero-value fallbacks
   (k=0.4, c=0.7, m=1) take 873 frames — roughly fifteen seconds of continuous
-  redraw at 60 Hz — to settle to 0.005. `motion` and `springbutton` set
-  their own.
+  redraw at 60 Hz — to settle to 0.005. `motion` sets its own, and
+  `springbutton` reads the theme's `Motion.SpringSnappy` preset.
 - **`glow` reserves no space and measures in pixels.** `Spread` draws outside
   the bounds it is given and returns nothing, so in a flex it spills over its
   neighbours unless the caller insets or clips; and `Options.Radius` is raw
   pixels rather than dp, which is backwards from every other size in the
   system. The blur-based alternative was measured and rejected, as the
   package doc records.
-- **Animations count frames, not time.** `springbutton` ticks its spring
-  at a hard-coded inverse step of 60 whatever the display is doing, so a
-  press that takes 415 ms on a 60 Hz screen takes half that on a 120 Hz one;
-  `tween` and `conductor` count frames by construction. The token motion
-  scale carries duration stops and spring presets, and `motion.FramesAt`
-  converts a stop at a stated frame rate — but nothing here reads the actual
-  refresh rate.
-- **Reduced motion is honoured by the theme, not by the springs.** The
-  theme's `Motion` observable emits `MotionScale.Reduced()` — every duration
-  zero — while the OS preference is on, and anything timed off a duration
-  stop, `components/tooltip`'s delay among them, snaps for free. But `springbutton` does not subscribe `Motion`, so its press spring
-  runs at full amplitude under reduced motion; code driving a spring must
-  read the zero durations as the snap signal itself.
+- **The primitives count frames, not time.** `tween` and `conductor` count
+  frames by construction, and `spring` and `motion` take their step from the
+  caller. The token motion scale carries duration stops and spring presets,
+  and `motion.FramesAt` converts a stop at a stated frame rate. Only
+  `springbutton` steps by the frame's elapsed time, read from `gtx.Now`.
+- **Reduced motion reaches a spring only through its caller.** The theme's
+  `Motion` observable emits `MotionScale.Reduced()` — every duration zero —
+  while the OS preference is on, and anything timed off a duration stop,
+  `components/tooltip`'s delay among them, snaps for free. `springbutton`
+  reads the zero durations and lands its press in one frame. Code that drives
+  a `spring` or a `motion` primitive itself must read the zeros as the snap
+  signal.
 
 ## License
 
