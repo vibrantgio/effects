@@ -51,7 +51,6 @@ func staticTheme(c tokens.PlatformColors) theme.Theme {
 		Motion:     rx.Of(tokens.Motion),
 		Spacing:    rx.Of(tokens.Spacing),
 		Radius:     rx.Of(tokens.Radius),
-		Elevation:  rx.Of(tokens.Elevation),
 	}
 }
 
