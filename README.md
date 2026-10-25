@@ -173,13 +173,18 @@ answer.
 
 ## For coding assistants
 
-Read the org guide before you write code against this module: the plan
-root's [`AGENTS.md`](https://github.com/vibrantgio/organisation/blob/master/AGENTS.md).
+Read this repository's [AGENTS.md](./AGENTS.md) before you write code against this module.
 
-The build, test and golden-image commands are reached from the same
-[`organisation/AGENTS.md`](https://github.com/vibrantgio/organisation/blob/master/AGENTS.md).
-`-golden.update` follows the package list (`go test ./depth -golden.update`);
-placed before it, `go test` tests the current directory only.
+Build and test the root module with `go build ./...` and `go test ./...`.
+
+To regenerate golden images, name the test packages and put the flag after them.
+The `golden` package of the `components` module defines the flag `golden.update` in `golden/golden.go`.
+Placed before the packages, `go test` tests the current directory only.
+Name only packages that store golden images, because a test binary rejects a flag it never declared.
+
+```sh
+go test ./depth -golden.update
+```
 
 ## Status
 
