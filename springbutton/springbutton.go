@@ -59,7 +59,7 @@
 // # Fonts
 //
 // The title is shaped with the theme's cached shaper
-// (Typography.Shaper()) in the LabelLarge role; the theme owns the
+// (Typography.Shaper()) in the SystemFont role; the theme owns the
 // typeface. That shaper is built once for the process and shared by
 // every component reading the same typography: the cache lives behind
 // the Typography value, so it survives the copy the map function below
@@ -153,7 +153,7 @@ func SpringButton(
 	}
 
 	// Flatten the nested theme observables into a concrete snapshot. The
-	// typography emission supplies both the LabelLarge text style and the
+	// typography emission supplies both the SystemFont text style and the
 	// theme's cached shaper; the theme owns the typeface. The motion
 	// emission supplies the spring preset and the reduced-motion signal.
 	resolved := rx.SwitchMap(th, func(t theme.Theme) rx.Observable[resolvedTokens] {
@@ -167,7 +167,7 @@ func SpringButton(
 				typ := n.Second
 				return resolvedTokens{
 					platform: n.First,
-					title:    typ.LabelLarge,
+					title:    typ.SystemFont,
 					spacing:  n.Third,
 					radius:   n.Fourth,
 					density:  n.Fifth,
@@ -274,7 +274,7 @@ func SpringButton(
 						return button.RenderIcon(props.Icon,
 							tok.platform, tok.spacing, tok.radius, tok.density, state)(gtx)
 					}
-					// Render takes the LabelLarge role's whole text style
+					// Render takes the SystemFont role's whole text style
 					// and the theme's density, so the spring button shapes
 					// and sizes exactly like the static one.
 					return button.Render(
@@ -386,7 +386,7 @@ func reducedMotion(m tokens.MotionScale) bool {
 // at scale = 1.
 type resolvedTokens struct {
 	platform tokens.PlatformColors
-	title    tokens.TextStyle // the LabelLarge role: typeface, weight, size, line height
+	title    tokens.TextStyle // the SystemFont role: typeface, weight, size, line height
 	spacing  tokens.SpacingScale
 	radius   tokens.RadiusScale
 	density  tokens.Density // control height and inner padding

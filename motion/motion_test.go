@@ -46,7 +46,7 @@ var shaper = tokens.DefaultTypography.DeterministicShaper()
 // GPU contexts.
 func renderBtn(colors tokens.PlatformColors, s button.RenderState) layout.Widget {
 	sharp := tokens.RadiusScale{}
-	return button.Render(shaper, "", colors, tokens.Spacing, sharp, tokens.DefaultTypography.LabelLarge, tokens.Comfortable, s)
+	return button.Render(shaper, "", colors, tokens.Spacing, sharp, tokens.DefaultTypography.SystemFont, tokens.Comfortable, s)
 }
 
 // scene composes a light backdrop and a motion-transformed button on
