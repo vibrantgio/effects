@@ -100,6 +100,7 @@ func LerpPlatformColors(from, to tokens.PlatformColors, t float64) tokens.Platfo
 		FieldEdge:                             tween.LerpNRGBA(from.FieldEdge, to.FieldEdge, t),
 		ScrollbarThumb:                        tween.LerpNRGBA(from.ScrollbarThumb, to.ScrollbarThumb, t),
 		AlternatingContentBackground:          tween.LerpNRGBA(from.AlternatingContentBackground, to.AlternatingContentBackground, t),
+		ContentListSelection:                  tween.LerpNRGBA(from.ContentListSelection, to.ContentListSelection, t),
 		Scrim:                                 tween.LerpNRGBA(from.Scrim, to.Scrim, t),
 		SidebarSearchFill:                     tween.LerpNRGBA(from.SidebarSearchFill, to.SidebarSearchFill, t),
 		ToolbarControlFill:                    tween.LerpNRGBA(from.ToolbarControlFill, to.ToolbarControlFill, t),
