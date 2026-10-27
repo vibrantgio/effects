@@ -114,7 +114,39 @@ func LerpPlatformColors(from, to tokens.PlatformColors, t float64) tokens.Platfo
 		ToolbarCheckedOverlay:                 tween.LerpNRGBA(from.ToolbarCheckedOverlay, to.ToolbarCheckedOverlay, t),
 		PaneRim:                               tween.LerpNRGBA(from.PaneRim, to.PaneRim, t),
 		PaneShadow:                            LerpDropShadow(from.PaneShadow, to.PaneShadow, t),
+		HelpTagEdge:                           LerpEdge(from.HelpTagEdge, to.HelpTagEdge, t),
+		HelpTagShadow:                         LerpShadowCurve(from.HelpTagShadow, to.HelpTagShadow, t),
 	}
+}
+
+// LerpEdge interpolates a measured edge as [LerpDropShadow] interpolates a
+// shadow: each coverage with [tween.LerpNRGBA], the side, the corner pixel
+// and each pixel of the rim alike.
+//
+// The result at t=0 and t=1 equals the endpoints exactly.
+func LerpEdge(from, to tokens.Edge, t float64) tokens.Edge {
+	e := tokens.Edge{
+		Side:   tween.LerpNRGBA(from.Side, to.Side, t),
+		Corner: tween.LerpNRGBA(from.Corner, to.Corner, t),
+	}
+	for i := range e.Rim {
+		e.Rim[i] = tween.LerpNRGBA(from.Rim[i], to.Rim[i], t)
+	}
+	return e
+}
+
+// LerpShadowCurve interpolates a shadow read pixel by pixel as
+// [LerpDropShadow] interpolates a ramp: the coverage at each distance with
+// [tween.LerpNRGBA] and the offset with [tween.LerpFloat64].
+//
+// The result at t=0 and t=1 equals the endpoints exactly.
+func LerpShadowCurve(from, to tokens.ShadowCurve, t float64) tokens.ShadowCurve {
+	var s tokens.ShadowCurve
+	for d := range s.Alpha {
+		s.Alpha[d] = tween.LerpNRGBA(from.Alpha[d], to.Alpha[d], t)
+	}
+	s.Offset = float32(tween.LerpFloat64(float64(from.Offset), float64(to.Offset), t))
+	return s
 }
 
 // LerpDropShadow interpolates a measured shadow: its coverage with
