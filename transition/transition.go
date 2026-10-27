@@ -49,7 +49,7 @@ func LerpPlatformColors(from, to tokens.PlatformColors, t float64) tokens.Platfo
 		SelectedTextBackground:                tween.LerpNRGBA(from.SelectedTextBackground, to.SelectedTextBackground, t),
 		UnemphasizedSelectedTextBackground:    tween.LerpNRGBA(from.UnemphasizedSelectedTextBackground, to.UnemphasizedSelectedTextBackground, t),
 		UnemphasizedSelectedText:              tween.LerpNRGBA(from.UnemphasizedSelectedText, to.UnemphasizedSelectedText, t),
-		FindHighlight:                         tween.LerpNRGBA(from.FindHighlight, to.FindHighlight, t),
+		HighlightFill:                         tween.LerpNRGBA(from.HighlightFill, to.HighlightFill, t),
 		Separator:                             tween.LerpNRGBA(from.Separator, to.Separator, t),
 		Grid:                                  tween.LerpNRGBA(from.Grid, to.Grid, t),
 		Seam:                                  tween.LerpNRGBA(from.Seam, to.Seam, t),
