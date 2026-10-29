@@ -95,6 +95,7 @@ func LerpPlatformColors(from, to tokens.PlatformColors, t float64) tokens.Platfo
 		CardFill:                              tween.LerpNRGBA(from.CardFill, to.CardFill, t),
 		PushButtonFill:                        tween.LerpNRGBA(from.PushButtonFill, to.PushButtonFill, t),
 		DefaultButtonFill:                     tween.LerpNRGBA(from.DefaultButtonFill, to.DefaultButtonFill, t),
+		AccentFill:                            tween.LerpNRGBA(from.AccentFill, to.AccentFill, t),
 		HoverOverlay:                          tween.LerpNRGBA(from.HoverOverlay, to.HoverOverlay, t),
 		PressOverlay:                          tween.LerpNRGBA(from.PressOverlay, to.PressOverlay, t),
 		FloatingShadow:                        LerpDropShadow(from.FloatingShadow, to.FloatingShadow, t),
