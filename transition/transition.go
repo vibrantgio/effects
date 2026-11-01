@@ -116,7 +116,7 @@ func LerpPlatformColors(from, to tokens.PlatformColors, t float64) tokens.Platfo
 		ToolbarCheckedOverlay:                 tween.LerpNRGBA(from.ToolbarCheckedOverlay, to.ToolbarCheckedOverlay, t),
 		FindButtonFill:                        tween.LerpNRGBA(from.FindButtonFill, to.FindButtonFill, t),
 		FindButtonRim:                         tween.LerpNRGBA(from.FindButtonRim, to.FindButtonRim, t),
-		FindButtonLabel:                       tween.LerpNRGBA(from.FindButtonLabel, to.FindButtonLabel, t),
+		FindButtonForeground:                  tween.LerpNRGBA(from.FindButtonForeground, to.FindButtonForeground, t),
 		PaneRim:                               tween.LerpNRGBA(from.PaneRim, to.PaneRim, t),
 		PaneShadow:                            LerpDropShadow(from.PaneShadow, to.PaneShadow, t),
 		HelpTagEdge:                           LerpEdge(from.HelpTagEdge, to.HelpTagEdge, t),
